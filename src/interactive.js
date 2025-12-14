@@ -8,11 +8,10 @@ import { createDoor } from './objects.js';
  * Interactable base
  */
 export class Interactable extends THREE.Group {
-  constructor({ label, onInteract, hint = 'Interact (E)' }) {
+  constructor({ label, hint = 'Interact (E)' }) {
     super();
     this.isInteractable = true;
     this.label = label || 'Interactable';
-    this.onInteract = onInteract || (() => {});
     this.hint = hint;
   }
 }
@@ -134,28 +133,14 @@ export class HingedDoor extends Interactable {
     
     // Set position and rotation
     this.position.set(x, y, z);
-    this.rotation.y = rotationY;
     
     // Create door using createDoor function
     // Position at origin since the parent Interactable handles positioning
-    const doorComponents = createDoor(0, 0, 0, width, height, depth, frameMat, doorMat, handleMat, 0);
+    const doorComponents = createDoor(0, 0, 0, width, height, depth, frameMat, doorMat, handleMat, rotationY);
     
-    // Create pivot point for rotation
-    const pivot = new THREE.Object3D();
-    this.add(pivot);
+    this.add(doorComponents.frame);
     
-    // Add the door mesh to the pivot
-    pivot.add(doorComponents.door);
-    
-    // Add frame pieces directly to the Interactable (they don't rotate)
-    this.add(doorComponents.frameTop);
-    this.add(doorComponents.frameLeft);
-    this.add(doorComponents.frameRight);
-    
-    // Position the door so the pivot is at the correct edge
-    pivot.position.set(0, 0, 0);
-    
-    this.pivot = pivot;
+    this.hing = doorComponents.hing;
     this.frame = doorComponents.frame;
 
     this.door = doorComponents.door;
@@ -169,10 +154,13 @@ export class HingedDoor extends Interactable {
   }
   
   update(dt) {
-    const target = this.open ? this.openAngle : 0;
-    const curr = this.pivot.rotation.y;
+    let target = 0;
+    if(this.open) {
+      target = this.openAngle
+    }
+    const curr = this.hing.rotation.y;
     const speed = 4.0;
-    this.pivot.rotation.y = THREE.MathUtils.damp(curr, target, speed, dt);
+    this.hing.rotation.y = THREE.MathUtils.damp(curr, target, speed, dt);
   }
 }
 

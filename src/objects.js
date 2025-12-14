@@ -40,15 +40,16 @@ export function createHouse(w, h, d, t, floorMat, wallMat, frameMat, doorMat, ha
     // const frontDoor = createDoor(
     //     0, doorH/2 , d/2, doorW, doorH, t, frameMat, doorMat
     // );
+     
     const frontDoorWall = createWall(0, (h+doorH)/2, d/2, doorW, (h-doorH), t, wallMat);
     const frontLeftWall = createWallWithWindow(
        (w+doorW)/4, h/2, d/2, (w-doorW)/2, h, t, 
-        1.5, 0, 1.2, 1,
+        1.5, 0.5, 1.2, 1,
         wallMat, frameMat, windowMat, Math.PI 
     );
     const frontRightWall = createWallWithWindow(
         -(w+doorW)/4, h/2, d/2, (w-doorW)/2, h, t, 
-        -1.5, 0, 1.2, 1,
+        -1.5, 0.5, 1.2, 1,
         wallMat, frameMat, windowMat, Math.PI 
     );
     house.add(frontDoor);
@@ -84,16 +85,10 @@ export function createHouse(w, h, d, t, floorMat, wallMat, frameMat, doorMat, ha
     return {house, groundObjs, obstacles, interactables};
 }
 
-// Helper function to create walls
-export function createWall(x, y, z, w, h, d, mat) {
-    const wall = new T.Mesh(new T.BoxGeometry(w, h, d), mat);
-    wall.position.set(x, y, z);
-    wall.castShadow = true;
-    wall.receiveShadow = true;
-    
-    return wall;
-};
 
+// Helper functions building complex objects with simple objects
+
+// Creates a wall with a window in it
 export function createWallWithWindow(
     x, y, z, w, h, t,
     winOffsetX, winOffsetY, winW, winH,
@@ -149,6 +144,7 @@ export function createWallWithWindow(
     return group;
 }
 
+// Creates a wall with a doorway hole in it
 export function createWallWithPassage(
     x, y, z, w, h, t,
     passageOffsetX, passageW, passageH,
@@ -201,7 +197,19 @@ export function createWallWithPassage(
 
 
 
-// Helper functoin to create floor
+// Helper function Creating Simple Objects
+
+// Creates a basic wall
+export function createWall(x, y, z, w, h, d, mat) {
+    const wall = new T.Mesh(new T.BoxGeometry(w, h, d), mat);
+    wall.position.set(x, y, z);
+    wall.castShadow = true;
+    wall.receiveShadow = true;
+    
+    return wall;
+};
+
+// Creates a horizontal plane
 export function createFloor(w, d, h, mat) {
     // Floor (interior)
     const floor = new T.Mesh(new T.PlaneGeometry(w, d), mat);
@@ -215,6 +223,7 @@ export function createFloor(w, d, h, mat) {
     return floor;
 }
 
+// Creates a Door with a frame and handle
 export function createDoor(x, y, z, w, h, t, frameMat, doorMat, handleMat, rotationY) {
     // Create the Frame of the door
     const frame = new T.Group();
@@ -240,26 +249,30 @@ export function createDoor(x, y, z, w, h, t, frameMat, doorMat, handleMat, rotat
     frame.add(frameRight);
 
     // Create the door for the frame
+    const hing = new T.Object3D();
     const door = new T.Mesh(new T.BoxGeometry(w - 2*t, h-t, t), doorMat);
-    door.position.set(0, -t/2, 0);
+    hing.position.set(-(w-t)/2, 0, 0);
+    door.position.set((w-t)/2, -t/2, 0);
     door.castShadow = true;
     door.receiveShadow = true;
-    frame.add(door);
+    hing.add(door);
+    frame.add(hing);
 
     // Create a handle for each side of the door
     const frontHandle = new T.Mesh(new T.CylinderGeometry(0.03, 0.03, 0.15, 16), handleMat);
     frontHandle.rotation.x = Math.PI / 2; // Lay it horizontally
-    frontHandle.position.set(1*w/4, 0, t/2);
-    frame.add(frontHandle);
+    frontHandle.position.set(3*w/4, 0, t/2);
+    hing.add(frontHandle);
 
     const backHandle = new T.Mesh(new T.CylinderGeometry(0.03, 0.03, 0.15, 16), handleMat);
     backHandle.rotation.x = -Math.PI / 2; // Lay it horizontally
-    backHandle.position.set(1*w/4, 0, -t/2);
-    frame.add(backHandle);
+    backHandle.position.set(3*w/4, 0, -t/2);
+    hing.add(backHandle);
 
-    return { frame, door, frameLeft, frameTop, frameRight };
+    return { frame, door, frameLeft, frameTop, frameRight, hing };
 }
 
+// Creates a window with a frame
 export function createWindow(x, y, z, w, h, t, frameMat, glassMat, rotationY=0) {
     const window = new T.Group();
     window.position.set(x, y, z);

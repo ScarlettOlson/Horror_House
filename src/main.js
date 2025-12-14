@@ -37,7 +37,7 @@ const CONFIG = {
     fov: T.MathUtils.degToRad(35),
   },
   interact: {
-    distance: 5.0, // Increased interaction distance
+    distance: 1.5, // Increased interaction distance
   },
   world: {
     gravity: -15.0, // gravity acceleration
@@ -203,6 +203,7 @@ class Game {
     const frameMat      = await loadTextureSafely('textures/frame.jpg',      0xFF00FF);
     const noteMat       = await loadTextureSafely('textures/note.jpg',       0xddddcc);
     const furnitureMat  = await loadTextureSafely('textures/furniture.jpg',  0x5a4a3a);
+    const groundMat     = await loadTextureSafely('textures/ground.jpg',     0x97ff9e);
     const windowMat = new T.MeshStandardMaterial({ 
       color: 0x99bbee, 
       transparent: true, 
@@ -221,6 +222,7 @@ class Game {
     const house = new T.Group();
     this.scene.add(house);
 
+
     // Build the basic pieces of a house
     const house_pieces = objects.createHouse(
       houseWidth, houseHeight, houseDepth, wallThickness,
@@ -233,123 +235,16 @@ class Game {
       this.interactables.push(obj);
       this.updateables.push(obj);
     });
-    
-   
 
-    
-    // Add furniture to make it feel like a house
-    // Bookshelf
-    const bookshelf = objects.createBookShelf(2, 2, 2, 1, 2, 1, bookshelfMat);
-    bookshelf.position.set(-houseWidth/2 + 1.5, 0, -houseDepth/2 + 1.5);
-    const shelfBack = new T.Mesh(new T.BoxGeometry(0.1, 1.5, 0.8), furnitureMat);
-    shelfBack.position.set(0, 0.75, 0);
-    shelfBack.castShadow = true;
-    shelfBack.receiveShadow = true;
-    bookshelf.add(shelfBack);
-    for (let i = 0; i < 4; i++) {
-      const shelf = new T.Mesh(new T.BoxGeometry(0.8, 0.05, 0.8), furnitureMat);
-      shelf.position.set(0, i * 0.4 + 0.2, 0);
-      shelf.castShadow = true;
-      shelf.receiveShadow = true;
-      bookshelf.add(shelf);
-    }
-    house.add(bookshelf);
-    bookshelf.traverse(child => { if (child.isMesh) this.obstacles.push(child); });
 
-    // Table
-    const table = new T.Group();
-    table.position.set(houseWidth/2 - 2, 0, -houseDepth/2 + 2);
-    const tableTop = new T.Mesh(new T.BoxGeometry(1.2, 0.05, 0.8), furnitureMat);
-    tableTop.position.set(0, 0.4, 0);
-    tableTop.castShadow = true;
-    tableTop.receiveShadow = true;
-    table.add(tableTop);
-    for (let i = 0; i < 4; i++) {
-      const leg = new T.Mesh(new T.BoxGeometry(0.05, 0.4, 0.05), furnitureMat);
-      leg.position.set((i % 2) * 1.1 - 0.55, 0.2, (i < 2 ? -0.35 : 0.35));
-      leg.castShadow = true;
-      leg.receiveShadow = true;
-      table.add(leg);
-    }
-    house.add(table);
-    table.traverse(child => { if (child.isMesh) this.obstacles.push(child); });
-
-    // Couch/sofa
-    const couch = new T.Group();
-    couch.position.set(-2, 0, 2);
-    const couchBase = new T.Mesh(new T.BoxGeometry(2.0, 0.4, 0.8), furnitureMat);
-    couchBase.position.set(0, 0.2, 0);
-    couchBase.castShadow = true;
-    couchBase.receiveShadow = true;
-    couch.add(couchBase);
-    const couchBack = new T.Mesh(new T.BoxGeometry(2.0, 0.6, 0.1), furnitureMat);
-    couchBack.position.set(0, 0.5, -0.35);
-    couchBack.castShadow = true;
-    couchBack.receiveShadow = true;
-    couch.add(couchBack);
-    house.add(couch);
-    couch.traverse(child => { if (child.isMesh) this.obstacles.push(child); });
-
-    // Small cabinet/dresser
-    const cabinet = new T.Group();
-    cabinet.position.set(3, 0, 3);
-    const cabinetBody = new T.Mesh(new T.BoxGeometry(0.8, 0.6, 0.5), furnitureMat);
-    cabinetBody.position.set(0, 0.3, 0);
-    cabinetBody.castShadow = true;
-    cabinetBody.receiveShadow = true;
-    cabinet.add(cabinetBody);
-    house.add(cabinet);
-    cabinet.traverse(child => { if (child.isMesh) this.obstacles.push(child); });
-
-    // Ground plane outside house only - positioned below interior floor to prevent clipping
-    // Create separate ground segments around the house
-    const groundMat = protoMat(0x4a4a4a);
-    const groundThickness = 0.1;
-    const groundY = CONFIG.world.floorY - groundThickness/2;
-    
-    // Front ground
-    const frontGround = new T.Mesh(
-      new T.PlaneGeometry(houseWidth + 4, 10),
-      groundMat
-    );
-    frontGround.rotation.x = -Math.PI/2;
-    frontGround.position.set(0, groundY, -houseDepth/2 - 5);
-    frontGround.receiveShadow = true;
-    this.scene.add(frontGround);
-    this.groundObjects.push(frontGround);
-    
-    // Back ground
-    const backGround = new T.Mesh(
-      new T.PlaneGeometry(houseWidth + 4, 10),
-      groundMat
-    );
-    backGround.rotation.x = -Math.PI/2;
-    backGround.position.set(0, groundY, houseDepth/2 + 5);
-    backGround.receiveShadow = true;
-    this.scene.add(backGround);
-    this.groundObjects.push(backGround);
-    
-    // Left ground
-    const leftGround = new T.Mesh(
-      new T.PlaneGeometry(10, houseDepth),
-      groundMat
-    );
-    leftGround.rotation.x = -Math.PI/2;
-    leftGround.position.set(-houseWidth/2 - 5, groundY, 0);
-    leftGround.receiveShadow = true;
-    this.scene.add(leftGround);
-    this.groundObjects.push(leftGround);
-    
-    // Right ground
-    const rightGround = new T.Mesh(
-      new T.PlaneGeometry(10, houseDepth),
-      groundMat
-    );
-    rightGround.rotation.x = -Math.PI/2;
-    rightGround.position.set(houseWidth/2 + 5, groundY, 0);
-    rightGround.receiveShadow = true;
-    this.scene.add(rightGround);
-    this.groundObjects.push(rightGround);
+    // Create a Ground plane
+    const ground = new T.Mesh(new T.PlaneGeometry(3*houseWidth , 3*houseDepth), groundMat);
+    ground.rotation.x = -Math.PI/2;
+    ground.position.set(0, 0, 0);
+    ground.receiveShadow = true;
+    this.scene.add(ground);
+    this.groundObjects.push(ground);    
+  
     
     // Add skybox with gradient effect
     const skyGeometry = new T.SphereGeometry(200, 32, 32);
@@ -424,6 +319,8 @@ class Game {
       this.interactables.push(note);
       this.updateables.push(note); // Add to updateables for animation
     }
+
+    alert("Notes Created");
   }
 
   checkGrounded() {
@@ -503,82 +400,9 @@ class Game {
     forward.normalize();
     right.normalize();
 
-    // Interaction check (E key or interact button)
-    // Use distance-based check instead of raycast for more reliable interaction
-    let interactionHandled = false;
+    // Handle Interactions
     if (this.interactables.length > 0) {
-      const interact = this.input.consumeInteract();
-      if (interact) {
-        // Check distance to all interactables
-        const playerPos = this.camera.position;
-        let closestNote = null;
-        let closestDistance = Infinity;
-        
-        for (const interactable of this.interactables) {
-          if (interactable instanceof Note && !interactable.collected) {
-            const distance = playerPos.distanceTo(interactable.position);
-            if (distance < CONFIG.interact.distance && distance < closestDistance) {
-              closestDistance = distance;
-              closestNote = interactable;
-            }
-          }
-        }
-        
-        if (closestNote) {
-          interactionHandled = true;
-          // Show note popup
-          this.showNotePopup(closestNote);
-            // Collect password piece if not already collected
-            if (!closestNote.collected) {
-              closestNote.collected = true;
-              // Store password piece at its fixed index position
-              this.passwordPieces.set(closestNote.passwordIndex, closestNote.passwordPiece);
-              // Hide the note visually (make it transparent)
-              closestNote.traverse(child => {
-                if (child.isMesh && child.material) {
-                  child.material.transparent = true;
-                  child.material.opacity = 0.3;
-                }
-              });
-              // Update UI - display password in correct order (indices 0, 1, 2)
-              dom.noteCount.textContent = this.passwordPieces.size;
-              // Build password string in correct order
-              const passwordArray = [];
-              for (let i = 0; i < 3; i++) {
-                if (this.passwordPieces.has(i)) {
-                  passwordArray.push(this.passwordPieces.get(i));
-                } else {
-                  passwordArray.push('__');
-                }
-              }
-              // Join pieces and then split into individual characters for display
-              const password = passwordArray.join('');
-              dom.codeDisplay.textContent = password.split('').join(' ');
-              if (this.passwordPieces.size === 3) {
-                dom.objective.textContent = 'Return to the basement door to unlock it.';
-              } else {
-                dom.objective.textContent = `Find ${3 - this.passwordPieces.size} more note(s) to unlock the basement.`;
-              }
-            }
-        } else {
-          // Try raycast for other interactables
-          this.raycaster.set(this.camera.position, forward);
-          this.raycaster.far = CONFIG.interact.distance;
-          const candidates = this.raycaster.intersectObjects(this.interactables, true);
-          if (candidates.length > 0 && candidates[0].distance < CONFIG.interact.distance) {
-            const hit = candidates[0].object;
-            // Find parent interactable
-            let node = hit;
-            while (node && !node.isInteractable) node = node.parent;
-            if (node && node.isInteractable) {
-              interactionHandled = true;
-              if (node.onInteract) {
-                node.onInteract();
-              }
-            }
-          }
-        }
-      }
+      this.interact();
     }
 
 
@@ -663,6 +487,7 @@ class Game {
     dom.message.textContent = text;
     dom.overlay.classList.add('show');
   }
+  
   hideOverlay() {
     dom.overlay.classList.remove('show');
   }
@@ -670,10 +495,72 @@ class Game {
   showNotePopup(note) {
     dom.noteText.textContent = note.content;
     dom.notePopup.classList.add('show');
+    document.exitPointerLock();
   }
 
   hideNotePopup() {
     dom.notePopup.classList.remove('show');
+  }
+
+  interact() {
+    const playerPos = this.camera.position;
+    let closest = null;
+    let closestDist = Infinity;
+
+    // Find closest interactable within distance
+    for (const interactable of this.interactables) {
+      const dist = playerPos.distanceTo(interactable.position);
+      if (dist < closestDist) {
+        closestDist = dist;
+        closest = interactable;
+      }
+    }
+
+    if (this.input.interactRequested && closestDist <= CONFIG.interact.distance) {
+      this.input.consumeInteract();
+      if(closest instanceof Note) {
+        this.noteInteraction(closest);
+      }
+      else if(closest instanceof HingedDoor) {
+        closest.onInteract();
+      }
+    }
+    else {
+      // Float the hint on screen
+    }
+  }
+
+  noteInteraction(note) {
+    // Show note popup
+    this.showNotePopup(note);
+    // Collect password piece if not already collected
+    if (!note.collected) {
+      note.collected = true;
+      // Store password piece at its fixed index position
+      this.passwordPieces.set(note.passwordIndex, note.passwordPiece);
+      this.scene.remove(note);
+      this.interactables = this.interactables.filter(obj => obj !== note);
+      this.updateables = this.updateables.filter(obj => obj !== note);
+      // Update UI - display password in correct order (indices 0, 1, 2)
+      dom.noteCount.textContent = this.passwordPieces.size;
+      // Build password string in correct order
+      const passwordArray = [];
+      for (let i = 0; i < 3; i++) {
+        if (this.passwordPieces.has(i)) {
+          passwordArray.push(this.passwordPieces.get(i));
+        } else {
+          passwordArray.push('__');
+        }
+      }
+      // Join pieces and then split into individual characters for display
+      const password = passwordArray.join('');
+      dom.codeDisplay.textContent = password.split('').join(' ');
+      if (this.passwordPieces.size === 3) {
+        dom.objective.textContent = 'Return to the basement door to unlock it.';
+      } else {
+        dom.objective.textContent = `Find ${3 - this.passwordPieces.size} more note(s) to unlock the basement.`;
+      }
+    }
   }
 }
 
