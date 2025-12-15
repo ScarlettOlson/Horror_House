@@ -26,7 +26,7 @@ export class Interactable extends THREE.Group {
  */
 // Interactable Note class that extends Interactable and uses NoteObject
 export class InteractiveNote extends Interactable {
-  constructor({ passwordPiece, content, material, position, passwordIndex, useShineShader = false }) {
+  constructor({ passwordPiece, content, material, position, passwordIndex, useShineShader = false, rotationY=0 }) {
     super({
       label: 'Note',
       hint: 'Read Note (E)',
@@ -60,6 +60,7 @@ export class InteractiveNote extends Interactable {
     if (position) {
       this.position.copy(position);
     }
+    this.rotation.y = rotationY;
   }
   
   update(dt) {
@@ -170,24 +171,10 @@ export class InteractiveDrawer extends Interactable {
   }
 }
 
-/**
- * Collectible paper with index and value
- */
-export class Paper extends Interactable {
-  constructor({ index, value, material }) {
-    super({ label: `Paper ${index}`, hint: 'Pick up (E)' });
-    this.index = index;
-    this.value = value;
-    const geom = new THREE.PlaneGeometry(0.15, 0.2);
-    const mesh = new THREE.Mesh(geom, material);
-    mesh.rotation.x = -Math.PI/2; // lying on surface by default
-    mesh.castShadow = true; mesh.receiveShadow = true;
-    this.add(mesh);
-  }
-}
 
-export class InteractableCabinet extends Interactable {
-  constructor({ x, y, z, w, h, d, cabinetMat, handleMat, rotationY, label = 'Cabinet Door' }) {
+
+export class InteractiveCabinet extends Interactable {
+  constructor({ x, y, z, w, h, d, cabinetMat, handleMat, rotationY=0, label = 'Cabinet Door', openAngle=5*Math.PI/12 }) {
     super({ label, hint: 'Open/Close (E)' });
     this.position.set(x, y, z);
     
@@ -197,9 +184,9 @@ export class InteractableCabinet extends Interactable {
     
     // Door state
     this.isOpen = false;
-    this.openAngle = -75*Math.PI / 180; // 90 degrees open
+    this.openAngle = -openAngle;
     this.closedAngle = 0;
-    this.animationSpeed = 3; // radians per second
+    this.animationSpeed = 3;
     this.hing = hint;
   }
   

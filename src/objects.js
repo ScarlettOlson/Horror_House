@@ -1,5 +1,5 @@
 import * as T from '../CS559-Three/build/three.module.js';
-import { InteractableCabinet, InteractiveDoor, InteractiveDrawer } from './interactive.js';
+import { InteractiveCabinet, InteractiveDoor, InteractiveDrawer, InteractiveNote } from './interactive.js';
 
 
 
@@ -354,6 +354,35 @@ export function createBedroomFurniture(mattressMat, frameMat) {
   objects.push(bookShelf1, bookShelf2, bookShelf3, bookShelf4, bookShelf5, bookShelf6);
   obstacles.push(bookShelf1, bookShelf2, bookShelf3, bookShelf4, bookShelf5, bookShelf6);
 
+  // Place a Note on one of the shelves
+  const note = new InteractiveNote({
+    passwordPiece: '12',
+    passwordIndex: 0,
+    content: 'I found this note hidden behind the old bookshelf.\n\nPassword piece: 12',
+    material: frameMat,
+    position: new T.Vector3(-2.3, 1.8, -6),
+    rotationY: Math.PI,
+  });
+  objects.push(note);
+  interactables.push(note);
+
+  // Create Dressers
+  const dresser1 = new InteractiveCabinet({
+    x: -6, y: 1.25, z: 2.5, w: 2, h: 2.5, d: 1,
+    cabinetMat: frameMat, handleMat: mattressMat, openAngle:5*Math.PI/6
+  });
+  const dresser2 = new InteractiveCabinet({
+    x: -6, y: 1.25, z: -4.4, w: 2, h: 2.5, d: 1,
+    cabinetMat: frameMat, handleMat: mattressMat, openAngle:5*Math.PI/6
+  });
+  const dresser3 = new InteractiveCabinet({
+    x: -6, y: 1.25, z: -6, w: 2, h: 2.5, d: 1,
+    cabinetMat: frameMat, handleMat: mattressMat,
+    rotationY: Math.PI, openAngle: 5*Math.PI/6
+  });
+  objects.push(dresser1, dresser2, dresser3);
+  obstacles.push(dresser1, dresser2, dresser3);
+  interactables.push(dresser1, dresser2, dresser3);
   
 
   return { objects, obstacles, interactables }
@@ -408,7 +437,7 @@ export function createKitchen({
 
   // Create cabinets on the other wall
   for(let i=-3; i<0; i++) {
-    const cabinet = new InteractableCabinet({
+    const cabinet = new InteractiveCabinet({
       x: x + (d-drawerW) / 2,
       y: y + drawerW,
       z: z + wallT + ((i+0.5) * drawerW),
