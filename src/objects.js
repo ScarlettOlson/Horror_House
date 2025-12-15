@@ -304,12 +304,9 @@ export function createBedroomFurniture(mattressMat, frameMat) {
     mattressMat:mattressMat, frameMat:frameMat,
     rotationY:0
   });
-  objects.push(bed1);
-  obstacles.push(bed1);
-  objects.push(bed2);
-  obstacles.push(bed2);
-  objects.push(bed3);
-  obstacles.push(bed3);
+  objects.push(bed1, bed2, bed3);
+  obstacles.push(bed1, bed2, bed3);
+
 
   // Create nightstand beside beds
   const nightstand1 = new InteractiveDrawer({
@@ -324,35 +321,38 @@ export function createBedroomFurniture(mattressMat, frameMat) {
     x: -7.75, y:0, z:-9.3, w:1, h:3, d:1,
     drawerMat: frameMat, handleMat:mattressMat, rotationY:0
   });
-  objects.push(nightstand1);
-  obstacles.push(nightstand1);
-  interactables.push(nightstand1);
-  objects.push(nightstand2);
-  obstacles.push(nightstand2);
-  interactables.push(nightstand2);
-  objects.push(nightstand3);
-  obstacles.push(nightstand3);
-  interactables.push(nightstand3);
+  objects.push(nightstand1, nightstand2, nightstand3);
+  obstacles.push(nightstand1, nightstand2, nightstand3);
+
 
   // Create Bookshelfs for each of the rooms
   const bookShelf1 = new Bookshelf({
-    x: -8.5, y:0.05, z:2.5, w:0.8, h:2, d:3,
-    mat:frameMat, rotationY:-Math.PI/2
+    x: -8.5, y: 0.05, z: 2.5, w: 0.8, h: 2, d: 3,
+    mat: frameMat, rotationY: -Math.PI/2
   });
   const bookShelf2 = new Bookshelf({
-    x: -8.5, y:0.05, z:2.5, w:0.8, h:2, d:3,
-    mat:frameMat, rotationY:-Math.PI/2
+    x: -3.5, y: 0.05, z: 2.5, w: 0.8, h: 2, d: 3,
+    mat: frameMat, rotationY: -Math.PI/2
   });
   const bookShelf3 = new Bookshelf({
-    x: -8.5, y:0.05, z:2.5, w:0.8, h:2, d:3,
-    mat:frameMat, rotationY:-Math.PI/2
+    x: -8.5, y: 0.05, z: -4.4, w: 0.8, h: 2, d: 3,
+    mat: frameMat, rotationY: -Math.PI/2
   });
-  objects.push(bookShelf1);
-  obstacles.push(bookShelf1);
-  objects.push(bookShelf2);
-  obstacles.push(bookShelf2);
-  objects.push(bookShelf3);
-  obstacles.push(bookShelf3);
+  const bookShelf4 = new Bookshelf({
+    x: -3.5, y: 0.05, z: 1.4, w: 0.8, h: 2, d: 3,
+    mat: frameMat, rotationY: Math.PI/2
+  });
+  const bookShelf5 = new Bookshelf({
+    x: -3.5, y: 0.05, z: -6, w: 0.8, h: 2, d: 3,
+    mat: frameMat, rotationY: Math.PI/2
+  });
+  const bookShelf6 = new Bookshelf({
+    x: -8.5, y: 0.05, z: -6, w: 0.8, h: 2, d: 3,
+    mat: frameMat, rotationY: Math.PI/2
+  });
+
+  objects.push(bookShelf1, bookShelf2, bookShelf3, bookShelf4, bookShelf5, bookShelf6);
+  obstacles.push(bookShelf1, bookShelf2, bookShelf3, bookShelf4, bookShelf5, bookShelf6);
 
   
 
