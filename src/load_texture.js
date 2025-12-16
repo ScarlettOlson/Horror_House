@@ -13,36 +13,27 @@ const protoMat = (color) => {
 /**
  * Utility: tries to load a texture, falls back to a procedural if missing
  */
-export function loadTextureSafely(url, fallbackColor = 0x777777, isPrototype = false, textureSize = 1) {
+export function loadTextureSafely(url, fallbackColor = 0x777777, isPrototype = false) {
   const loader = new T.TextureLoader();
+
   return new Promise((resolve) => {
     if(isPrototype) {
       return resolve(protoMat(fallbackColor));
     }
-    
     loader.load(
       url,
       tex => {
         tex.wrapS = tex.wrapT = T.RepeatWrapping;
-        
-        resolve({
-          material: new T.MeshStandardMaterial({
-            map: tex,
-            roughness: 0.8,
-            metalness: 0.0
-          }),
-          texture: tex,
-          textureSize: textureSize // Store for later scaling
-        });
+        resolve(new T.MeshStandardMaterial({
+          map: tex,
+          roughness: 0.8,
+          metalness: 0.0
+        }));
       },
       undefined,
-      (error) => {
-        console.error(`[Texture] ✗ Failed to load: ${url}`, error);
-        resolve({
-          material: protoMat(fallbackColor),
-          texture: null,
-          textureSize: textureSize
-        });
+      () => {
+        // Fallback: return protoMat with the given color
+        resolve(protoMat(fallbackColor));
       }
     );
   });

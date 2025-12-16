@@ -3,24 +3,9 @@ import { InteractiveCabinet, InteractiveDoor, InteractiveDrawer, InteractiveNote
 import { createShineShader } from './load_texture.js';
 
 
-/**
- * Scale texture repeat based on geometry dimensions
- * @param {THREE.Material} material - Material with texture map
- * @param {number} width - Width of geometry
- * @param {number} height - Height of geometry  
- * @param {number} textureSize - Desired texture size in world units (default: 1)
- */
-export function scaleTexture(material, width, height, textureSize = 1) {
-  if (material && material.map) {
-    material.map.repeat.set(
-      width / textureSize,
-      height / textureSize
-    );
-  }
-}
 
 export function createHouse(
-  w, h, d, t,
+  w, h, d, t, 
   floorMat, ceilingMat, wallMat, frameMat, doorMat, handleMat, glassMat,
   couchMat, bookshelfMat, drawerMat, noteMat, tableMat, isPrototype
 ) {
@@ -42,7 +27,7 @@ export function createHouse(
   // obstacles.push(floor);
 
   // Build the exterior walls, windows, and doors of the house
-  const exterior = createHouseExterior(w, h, d, t, floorMat, wallMat, frameMat, doorMat, handleMat, glassMat, ceilingMat);
+  const exterior = createHouseExterior(w, h, d, t, floorMat, wallMat, frameMat, doorMat, handleMat, glassMat);
   house.add(exterior.group);
   exterior.groundObjs.forEach(obj => groundObjs.push(obj));
   exterior.obstacles.forEach(obj => obstacles.push(obj));
@@ -116,7 +101,7 @@ export function createHouse(
     position: new T.Vector3(9.6, 1.5, 6.2),
     passwordIndex: 2,
     useShineShader: !isPrototype,
-    rotationY: Math.PI / 2,
+    rotationY: Math.PI/2,
   });
   house.add(note1, note2, note3);
   interactables.push(note1, note2, note3);
@@ -125,7 +110,7 @@ export function createHouse(
 }
 
 
-export function createHouseExterior(w, h, d, t, floorMat, wallMat, frameMat, doorMat, handleMat, windowMat, ceilingMat) {
+export function createHouseExterior(w, h, d, t, floorMat, wallMat, frameMat, doorMat, handleMat, windowMat) {
   const doorW = 1.5;
   const doorH = Math.min(h, 2.5);
   const winW = 1.2;
@@ -179,7 +164,7 @@ export function createHouseExterior(w, h, d, t, floorMat, wallMat, frameMat, doo
   group.add(frontRightWindow);
   obstacles.push(frontLeftWindow);
   obstacles.push(frontDoorWall);
-  //obstacles.push(frontDoor);
+  obstacles.push(frontDoor);
   obstacles.push(frontCenterWindow);
   obstacles.push(frontRightWindow);
 
@@ -275,7 +260,7 @@ export function createHouseExterior(w, h, d, t, floorMat, wallMat, frameMat, doo
     w: w,
     d: d,
     h: h,
-    mat: ceilingMat
+    mat: wallMat
   });
   group.add(roof);
   obstacles.push(roof);
@@ -415,7 +400,7 @@ export function createBedroomFurniture(bedMat, frameMat, drawerMat, handleMat, b
 
   // Create Dressers
   const dresser1 = new InteractiveCabinet({
-    x: -6, y: 1.25, z: 2.55, w: 2, h: 2.5, d: 1,
+    x: -6, y: 1.25, z: 2.5, w: 2, h: 2.5, d: 1,
     cabinetMat: drawerMat, handleMat, openAngle: 5 * Math.PI / 6
   });
   const dresser2 = new InteractiveCabinet({
@@ -505,12 +490,17 @@ export function createDiningRoom(h, t, wallMat, tableMat, doorW, doorH) {
 
   const passage1 = new WallWithPassage({
     x: 7, y: h / 2, z: -4, w: 6, h, t: t,
-    passageX: 0, passageW: doorW, passsageH: 1,
+    passageX:0, passageW: doorW, passsageH: 1,
     wallMat: wallMat
 
   });
-  objects.push(passage1);
-  obstacles.push(passage1);
+  const passage2 = new WallWithPassage({
+    x: 4, y: h / 2, z: -0.5, w: 7, h, t,
+    passageX: -1, passageW: doorW, passageH: doorH,
+    wallMat, rotationY: Math.PI / 2
+  });
+  objects.push(passage1, passage2);
+  obstacles.push(passage1, passage2);
 
   const table = new Table({
     x: 7, y: 0, z: -1, w: 2, h: 1, d: 3,
@@ -564,7 +554,7 @@ export function createBasementRoom(h, t, wallMat, frameMat, doorW, doorH, doorMa
   const stairWest = new Wall({ ...stairWestInfo, mat: wallMat, rotationY: -Math.PI / 2 });
 
   // East Wall of staircase (x=4, z=0, len=6)
-  const stairEastInfo = { x: 4, y: h / 2, z: -0.5, w: 7, h, t };
+  const stairEastInfo = { x: 4, y: h / 2, z: 0, w: 6, h, t };
   const stairEast = new Wall({ ...stairEastInfo, mat: wallMat, rotationY: -Math.PI / 2 });
 
   // Rear Wall (North end) (x=2.5, z=-3, len=3)
@@ -606,16 +596,16 @@ export function createLivingRoom(h, couchMat, tableMat, drawerMat, handleMat) {
   let interactables = [];
 
   const couch = new Couch({
-    x: 9.3, y: 0, z: -7, w: 6, h: 2, d: 1.2, mat: couchMat, rotationY: -Math.PI / 2
+    x:9.3, y:0, z:-7, w:6, h:2, d:1.2, mat:couchMat, rotationY: -Math.PI/2
   });
   const table = new Table({
-    x: 4, y: 0, z: -8, w: 1.5, h: 1, d: 3, mat: tableMat,
+    x:4, y:0, z:-8, w:1.5, h:1, d:3, mat:tableMat,
   });
   const drawer1 = new InteractiveDrawer({
-    x: 3.1, y: 0.75, z: -3.7, w: 1.5, h: 1.25, d: 1.25, drawerMat, handleMat, rotationY: Math.PI
+    x:3.1, y:0.75, z:-3.7, w:1.5, h:1.25, d:1.25, drawerMat, handleMat, rotationY:Math.PI
   });
   const drawer2 = new InteractiveDrawer({
-    x: 1.6, y: 0.75, z: -3.7, w: 1.5, h: 1.25, d: 1.25, drawerMat, handleMat, rotationY: Math.PI
+    x:1.6, y:0.75, z:-3.7, w:1.5, h:1.25, d:1.25, drawerMat, handleMat, rotationY:Math.PI
   });
   objects.push(couch, table, drawer1, drawer2);
   obstacles.push(couch, table, drawer1, drawer2);
@@ -679,7 +669,7 @@ export class WallWithWindow extends T.Group {
       const rightWall = new T.Mesh(new T.BoxGeometry(rightWidth, winH, t), wallMat);
       rightWall.position.set(w / 2 - rightWidth / 2, winY, 0);
       this.add(rightWall);
-    }
+    } WallWithPassage
 
     // --- Window itself ---
     this.window = new Window({
@@ -903,7 +893,7 @@ export class Table extends T.Group {
 }
 
 export class Couch extends T.Group {
-  constructor({ x, y, z, w, h, d, mat, rotationY = 0 }) {
+  constructor({ x, y, z, w, h, d, mat, rotationY=0 }) {
     super();
     this.position.set(x, y, z);
     this.rotation.y = rotationY;
@@ -980,7 +970,7 @@ export class Cabinet extends T.Group {
       16
     );
     const handleCylinder = new T.Mesh(handleGeom, handleMat);
-    // handleCylinder.rotation.x = Math.PI / 2;
+    handleCylinder.rotation.x = Math.PI / 2;
 
     // Sphere at end of handle
     const sphereGeom = new T.SphereGeometry(handleRadius * 1.5, 16, 16);
@@ -1159,6 +1149,7 @@ export class SlidingDrawer extends T.Group {
     this.drawer.add(this.handle);
   }
 }
+
 
 /**
  * The giant eye that peers through windows
