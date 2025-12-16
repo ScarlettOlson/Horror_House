@@ -52,6 +52,10 @@ export function createHouse(w, h, d, t, floorMat, wallMat, frameMat, doorMat, ha
     kitchen.obstacles.forEach(obj => obstacles.push(obj));
     kitchen.interactables.forEach(obj => interactables.push(obj));
 
+    const diningRoom = createDiningRoom(h, t, wallMat, frameMat, doorW, doorH);
+    diningRoom.objects.forEach(obj => house.add(obj));
+    diningRoom.obstacles.forEach(obj => obstacles.push(obj));
+
     // Create Door to the basement
     // const basementDoor = new Door({
     //     x: 0, y: doorH/2, z: -d/2 - t/2, w: doorW, h: doorH, t,
@@ -290,17 +294,17 @@ export function createBedroomFurniture(mattressMat, frameMat) {
 
   // Create Beds for each of the rooms
   const bed1 = new Bed({
-    x: -9.1, y:0, z:8.4, w:1.5, h:2, d:3, mattressH: 0.5, 
+    x: -9.1, y:0, z:8.4, w:1.5, h:3, d:3, mattressH: 0.5, 
     mattressMat:mattressMat, frameMat:frameMat,
     rotationY:Math.PI
   });
   const bed2 = new Bed({
-    x: -8.4, y:0, z:1.1, w:1.5, h:2, d:3, mattressH: 0.5, 
+    x: -8.4, y:0, z:1.1, w:1.5, h:3, d:3, mattressH: 0.5, 
     mattressMat:mattressMat, frameMat:frameMat,
     rotationY:Math.PI/2
   });
   const bed3 = new Bed({
-    x: -9.1, y:0, z:-8.4, w:1.5, h:2, d:3, mattressH: 0.5, 
+    x: -9.1, y:0, z:-8.4, w:1.5, h:3, d:3, mattressH: 0.5, 
     mattressMat:mattressMat, frameMat:frameMat,
     rotationY:0
   });
@@ -438,7 +442,7 @@ export function createKitchen({
   // Create cabinets on the other wall
   for(let i=-3; i<0; i++) {
     const cabinet = new InteractiveCabinet({
-      x: x + (d-drawerW) / 2,
+      x: x + d/2 - drawerW,
       y: y + drawerW,
       z: z + wallT + ((i+0.5) * drawerW),
       w: drawerW, h: 2*drawerW, d: drawerW,
@@ -450,6 +454,32 @@ export function createKitchen({
   }
 
   return { objects, obstacles, interactables, drawers };
+}
+
+export function createDiningRoom(h, t, wallMat, tableMat, doorW, doorH) {
+  let objects = [];
+  let obstacles = [];
+
+  const wall = new Wall({ 
+    x: 7, y: h/2, z: -4, w: 6, h, t: t, mat: wallMat 
+
+  });
+  const passage = new WallWithPassage({
+    x: 4, y: h/2, z: -0.5, w: 7, h, t,
+    passageX: -1, passageW: doorW, passageH: doorH,
+    wallMat, rotationY: Math.PI/2
+  });
+  objects.push(wall, passage);
+  obstacles.push(wall, passage);
+
+  const table = new Table({
+    x: 7, y: 0, z: -2, w: 2, h: 1, d: 3,
+    mat:tableMat
+  })
+  objects.push(table);
+  obstacles.push(table);
+
+  return {objects, obstacles}
 }
 
 
