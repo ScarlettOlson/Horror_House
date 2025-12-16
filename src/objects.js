@@ -163,7 +163,7 @@ export function createHouseExterior(w, h, d, t, floorMat, wallMat, frameMat, doo
   group.add(frontRightWindow);
   obstacles.push(frontLeftWindow);
   obstacles.push(frontDoorWall);
-  //TODO UNCOMMENT THIS obstacles.push(frontDoor);
+  obstacles.push(frontDoor);
   obstacles.push(frontCenterWindow);
   obstacles.push(frontRightWindow);
 
@@ -504,7 +504,7 @@ export function createDiningRoom(h, t, wallMat, tableMat, doorW, doorH) {
   const table = new Table({
     x: 7, y: 0, z: -1, w: 2, h: 1, d: 3,
     mat: tableMat
-  })
+  });
   objects.push(table);
   obstacles.push(table);
 
