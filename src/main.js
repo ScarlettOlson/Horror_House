@@ -5,6 +5,7 @@ import * as inter_objs from './interactive.js';
 import { BasementDoor } from './interactive.js';
 import { createDirectionalLight, createPointLight } from './light.js';
 import * as objs from './objects.js';
+import { GLTFLoader } from '../CS559-Three/examples/jsm/loaders/GLTFLoader.js';
 
 
 // Print Async Error messages to the console
@@ -31,8 +32,8 @@ const CONFIG = {
     radius: 0.3, // collision radius for character
   },
   eye: {
-    intervalMin: 30, // seconds
-    intervalMax: 60,
+    intervalMin: 5, // seconds
+    intervalMax: 10,
     visibleDuration: 5, // seconds per peering
     sightDistance: 18,
     fov: T.MathUtils.degToRad(35),
@@ -183,6 +184,17 @@ class Game {
       console.error(err);
     });
 
+    // Ensure AudioContext is resumed on user interaction
+    const resumeAudio = () => {
+      if (this.listener.context.state === 'suspended') {
+        this.listener.context.resume();
+      }
+      window.removeEventListener('click', resumeAudio);
+      window.removeEventListener('keydown', resumeAudio);
+    };
+    window.addEventListener('click', resumeAudio);
+    window.addEventListener('keydown', resumeAudio);
+
 
     this.loop();
   }
@@ -212,26 +224,26 @@ class Game {
     dom.objective.textContent = 'Find 3 notes with password pieces to unlock the basement.';
 
     // Materials for house
-    const floorMat =        await loadTextureSafely('textures/floor.jpg',     0x6b5b4f, this.prototypeMode);
-    const ceilingMat =      await loadTextureSafely('textures/ceiling.jpg',   0x5a5a5a, this.prototypeMode);
-    const wallMat =         await loadTextureSafely('textures/wall.jpg',      0x8b7d6b, this.prototypeMode);
-    const frameMat =        await loadTextureSafely('textures/frame.jpg',     0xFF00FF, this.prototypeMode);
-    const doorMat =         await loadTextureSafely('textures/door.jpg',      0x4a3a2a, this.prototypeMode);
-    const handleMat =       await loadTextureSafely('textures/handle.jpg',    0xaaaaaa, this.prototypeMode)
-    const glassMat =        new T.MeshStandardMaterial({
+    const floorMat = await loadTextureSafely('textures/floor.jpg', 0x6b5b4f, this.prototypeMode);
+    const ceilingMat = await loadTextureSafely('textures/ceiling.jpg', 0x5a5a5a, this.prototypeMode);
+    const wallMat = await loadTextureSafely('textures/wall.jpg', 0x8b7d6b, this.prototypeMode);
+    const frameMat = await loadTextureSafely('textures/frame.jpg', 0xFF00FF, this.prototypeMode);
+    const doorMat = await loadTextureSafely('textures/door.jpg', 0x4a3a2a, this.prototypeMode);
+    const handleMat = await loadTextureSafely('textures/handle.jpg', 0xaaaaaa, this.prototypeMode)
+    const glassMat = new T.MeshStandardMaterial({
       color: 0x99bbee,
       transparent: true,
       opacity: 0.3,
       roughness: 0.1,
       metalness: 0.1
     });
-    const couchMat =        await loadTextureSafely('textures/furniture.jpg', 0x5a4a3a, this.prototypeMode);
-    const bookshelfMat =    await loadTextureSafely('textures/bookshelf.jpg', 0xFF00FF, this.prototypeMode);
-    const drawerMat =       await loadTextureSafely('textures.drawer.jpg',    0x991155, this.prototypeMode)
-    const noteMat =         await loadTextureSafely('textures/note.jpg',      0xddddcc, this.prototypeMode);
-    const tableMat =        await loadTextureSafely('textures/table.jpg',     0x111111, this.prototypeMode)
-    const groundMat =       await loadTextureSafely('textures/ground.jpg',    0x97ff9e, this.prototypeMode);
-    
+    const couchMat = await loadTextureSafely('textures/furniture.jpg', 0x5a4a3a, this.prototypeMode);
+    const bookshelfMat = await loadTextureSafely('textures/bookshelf.jpg', 0xFF00FF, this.prototypeMode);
+    const drawerMat = await loadTextureSafely('textures.drawer.jpg', 0x991155, this.prototypeMode)
+    const noteMat = await loadTextureSafely('textures/note.jpg', 0xddddcc, this.prototypeMode);
+    const tableMat = await loadTextureSafely('textures/table.jpg', 0x111111, this.prototypeMode)
+    const groundMat = await loadTextureSafely('textures/ground.jpg', 0x97ff9e, this.prototypeMode);
+
 
     // House dimensions
     const houseWidth = 20;
@@ -314,6 +326,54 @@ class Game {
     const skybox = new T.Mesh(skyGeometry, skyMaterial);
     skybox.renderOrder = -1000; // Render first
     this.scene.add(skybox);
+
+    // --- Evil Eye Implementation ---
+    const useFullMode = dom.fullModeCheckbox.checked;
+    let eyeModel = null;
+    let eyeTexture = null;
+
+    if (useFullMode) {
+      try {
+        const loader = new GLTFLoader();
+        // Load asynchronously
+        const gltf = await loader.loadAsync('assets/guarding_eye.glb');
+        eyeModel = gltf.scene;
+
+        // Ensure materials are set up correctly for the model
+        eyeModel.traverse(child => {
+          if (child.isMesh) {
+            child.castShadow = true;
+            child.receiveShadow = true;
+          }
+        });
+      } catch (err) {
+        console.error("Failed to load Eye GLB:", err);
+        // Fallback or just log error
+      }
+    } else {
+      // Load simple texture for placeholder eye if needed, or just use color
+      // For now, we'll let it use default white/color if texture is null
+      // eyeTexture = await loadTextureSafely('textures/eye_texture.jpg', 0xff0000, this.prototypeMode);
+    }
+
+    // Find all windows in the house to pass to the Eye
+    const windows = [];
+    house.traverse(child => {
+      if (child instanceof objs.Window) {
+        windows.push(child);
+      }
+    });
+
+    const giantEye = new objs.GiantEye({
+      texture: eyeTexture,
+      houseWindows: windows,
+      scene: this.scene,
+      getPlayerPos: () => this.camera.position,
+      getPlayerDir: () => new T.Vector3(0, 0, -1).applyQuaternion(this.camera.quaternion),
+      model: eyeModel,
+      config: CONFIG.eye
+    });
+    this.updateables.push(giantEye);
   }
 
   checkGrounded() {
@@ -341,7 +401,16 @@ class Game {
     const dt = Math.min(this.clock.getDelta(), 0.1); // Cap delta time for stability
 
     // Update interactables
-    for (const u of this.updateables) u.update(dt);
+    for (const u of this.updateables) {
+      const result = u.update(dt, this.obstacles);
+      if (result === 'spotted') {
+        this.showOverlay("YOU WERE CAUGHT!");
+        return; // Stop the loop? Or just show overlay?
+        // Typically we might want to pause or wait for restart.
+        // For now, let's just show overlay and maybe let the loop continue but effectively game over.
+        // Actually, returning here stops the loop, which effectively pauses the game.
+      }
+    }
 
     // Player movement
     const speed = this.input.running ? CONFIG.player.speedRun : CONFIG.player.speedWalk;

@@ -4,7 +4,7 @@ import { InteractiveCabinet, InteractiveDoor, InteractiveDrawer, InteractiveNote
 
 
 export function createHouse(
-  w, h, d, t, 
+  w, h, d, t,
   floorMat, ceilingMat, wallMat, frameMat, doorMat, handleMat, glassMat,
   couchMat, bookshelfMat, drawerMat, noteMat, tableMat, isPrototype
 ) {
@@ -100,7 +100,7 @@ export function createHouse(
     position: new T.Vector3(9.6, 1.5, 6.2),
     passwordIndex: 2,
     useShineShader: !isPrototype,
-    rotationY: Math.PI/2,
+    rotationY: Math.PI / 2,
   });
   house.add(note1, note2, note3);
   interactables.push(note1, note2, note3);
@@ -163,7 +163,7 @@ export function createHouseExterior(w, h, d, t, floorMat, wallMat, frameMat, doo
   group.add(frontRightWindow);
   obstacles.push(frontLeftWindow);
   obstacles.push(frontDoorWall);
-  obstacles.push(frontDoor);
+  //obstacles.push(frontDoor);
   obstacles.push(frontCenterWindow);
   obstacles.push(frontRightWindow);
 
@@ -489,7 +489,7 @@ export function createDiningRoom(h, t, wallMat, tableMat, doorW, doorH) {
 
   const passage1 = new WallWithPassage({
     x: 7, y: h / 2, z: -4, w: 6, h, t: t,
-    passageX:0, passageW: doorW, passsageH: 1,
+    passageX: 0, passageW: doorW, passsageH: 1,
     wallMat: wallMat
 
   });
@@ -595,16 +595,16 @@ export function createLivingRoom(h, couchMat, tableMat, drawerMat, handleMat) {
   let interactables = [];
 
   const couch = new Couch({
-    x:9.3, y:0, z:-7, w:6, h:2, d:1.2, mat:couchMat, rotationY: -Math.PI/2
+    x: 9.3, y: 0, z: -7, w: 6, h: 2, d: 1.2, mat: couchMat, rotationY: -Math.PI / 2
   });
   const table = new Table({
-    x:4, y:0, z:-8, w:1.5, h:1, d:3, mat:tableMat,
+    x: 4, y: 0, z: -8, w: 1.5, h: 1, d: 3, mat: tableMat,
   });
   const drawer1 = new InteractiveDrawer({
-    x:3.1, y:0.75, z:-3.7, w:1.5, h:1.25, d:1.25, drawerMat, handleMat, rotationY:Math.PI
+    x: 3.1, y: 0.75, z: -3.7, w: 1.5, h: 1.25, d: 1.25, drawerMat, handleMat, rotationY: Math.PI
   });
   const drawer2 = new InteractiveDrawer({
-    x:1.6, y:0.75, z:-3.7, w:1.5, h:1.25, d:1.25, drawerMat, handleMat, rotationY:Math.PI
+    x: 1.6, y: 0.75, z: -3.7, w: 1.5, h: 1.25, d: 1.25, drawerMat, handleMat, rotationY: Math.PI
   });
   objects.push(couch, table, drawer1, drawer2);
   obstacles.push(couch, table, drawer1, drawer2);
@@ -668,7 +668,7 @@ export class WallWithWindow extends T.Group {
       const rightWall = new T.Mesh(new T.BoxGeometry(rightWidth, winH, t), wallMat);
       rightWall.position.set(w / 2 - rightWidth / 2, winY, 0);
       this.add(rightWall);
-    } WallWithPassage
+    }
 
     // --- Window itself ---
     this.window = new Window({
@@ -892,7 +892,7 @@ export class Table extends T.Group {
 }
 
 export class Couch extends T.Group {
-  constructor({ x, y, z, w, h, d, mat, rotationY=0 }) {
+  constructor({ x, y, z, w, h, d, mat, rotationY = 0 }) {
     super();
     this.position.set(x, y, z);
     this.rotation.y = rotationY;
@@ -1153,24 +1153,69 @@ export class SlidingDrawer extends T.Group {
  * The giant eye that peers through windows
  */
 export class GiantEye extends T.Group {
-  constructor({ texture, houseWindows, scene, getPlayerPos, getPlayerDir }) {
+  constructor({ texture, houseWindows, scene, getPlayerPos, getPlayerDir, model = null, config }) {
     super();
     this.houseWindows = houseWindows;
     this.scene = scene;
     this.getPlayerPos = getPlayerPos;
     this.getPlayerDir = getPlayerDir;
+    this.config = config;
     this.visibleNow = false;
     this.timer = 0;
     this.nextPeek = this.randomInterval();
-    this.peekDuration = CONFIG.eye.visibleDuration;
+    this.peekDuration = this.config.visibleDuration;
 
-    const geom = new T.SphereGeometry(0.6, 32, 32);
-    const mat = new T.MeshPhongMaterial({
-      map: texture,
-      color: 0xffffff,
-      shininess: 30,
-    });
-    this.mesh = new T.Mesh(geom, mat);
+    if (model) {
+      // GLTF models are Groups, so we need to handle them differently
+      // Clone the model to avoid modifying the original
+      this.mesh = model.clone();
+
+      // Find the actual mesh within the group for lookAt operations
+      this.actualMesh = null;
+      this.mesh.traverse((child) => {
+        if (child.isMesh && !this.actualMesh) {
+          this.actualMesh = child;
+        }
+      });
+
+      // If no mesh found, use the group itself
+      if (!this.actualMesh) {
+        this.actualMesh = this.mesh;
+      }
+
+      // Adjust model scale - GLTF models might be too small or large
+      // Scale to approximately match the sphere size (0.6 radius = 1.2 diameter)
+      const box = new T.Box3().setFromObject(this.mesh);
+      const size = box.getSize(new T.Vector3());
+      const maxSize = Math.max(size.x, size.y, size.z);
+      if (maxSize > 0) {
+        const targetSize = 1.2; // Match sphere diameter
+        const scale = targetSize / maxSize;
+        this.mesh.scale.set(scale, scale, scale);
+      }
+
+      // Ensure materials are visible
+      this.mesh.traverse((child) => {
+        if (child.isMesh) {
+          child.castShadow = true;
+          child.receiveShadow = true;
+          // Make sure material is visible
+          if (child.material) {
+            child.material.visible = true;
+          }
+        }
+      });
+    } else {
+      const geom = new T.SphereGeometry(0.6, 32, 32);
+      const mat = new T.MeshPhongMaterial({
+        map: texture,
+        color: 0xffffff,
+        shininess: 30,
+      });
+      this.mesh = new T.Mesh(geom, mat);
+      this.actualMesh = this.mesh;
+    }
+
     this.add(this.mesh);
 
     // Start off-scene
@@ -1179,7 +1224,7 @@ export class GiantEye extends T.Group {
   }
 
   randomInterval() {
-    return CONFIG.eye.intervalMin + Math.random() * (CONFIG.eye.intervalMax - CONFIG.eye.intervalMin);
+    return this.config.intervalMin + Math.random() * (this.config.intervalMax - this.config.intervalMin);
   }
 
   chooseWindow() {
@@ -1195,12 +1240,31 @@ export class GiantEye extends T.Group {
       this.visibleNow = true;
       this.windowTarget = this.chooseWindow();
 
-      const lookPos = this.windowTarget.position.clone();
-      lookPos.y += 1.1;
-      const outward = new T.Vector3(0, 0, -1).applyQuaternion(this.windowTarget.quaternion);
-      const eyePos = lookPos.clone().add(outward.multiplyScalar(1.4)); // just outside window
+      const lookPos = new T.Vector3();
+      this.windowTarget.getWorldPosition(lookPos);
+
+      // Calculate "outward" direction from the center of the house (0,0,0)
+      // This is more robust than relying on wall rotations
+      const outward = new T.Vector3(lookPos.x, 0, lookPos.z).normalize();
+
+      // Position the eye outside the window
+      // Window is at lookPos. We want to be 'outward' from it.
+      // Eye radius ~0.6-0.8. Wall thickness ~0.2. 
+      // Distance 1.2 should be enough to be clearly outside but close.
+      const eyePos = lookPos.clone().add(outward.multiplyScalar(1.2));
+
+      // Ensure Eye is at window height (no extra Y offset)
+      eyePos.y = lookPos.y;
+
       this.position.copy(eyePos);
-      this.mesh.lookAt(lookPos);
+
+      // Use actualMesh for lookAt if it's a Mesh, otherwise rotate the group
+      if (this.actualMesh && this.actualMesh.isMesh) {
+        this.actualMesh.lookAt(lookPos);
+      } else {
+        // For Groups, rotate the whole group
+        this.lookAt(lookPos);
+      }
     }
 
     if (this.visibleNow) {
@@ -1211,18 +1275,33 @@ export class GiantEye extends T.Group {
       const playerPos = this.getPlayerPos();
       const toPlayer = new T.Vector3().subVectors(playerPos, this.position);
       const dist = toPlayer.length();
-      if (dist < CONFIG.eye.sightDistance) {
+      if (dist < this.config.sightDistance) {
         const dir = toPlayer.normalize();
-        const eyeForward = new T.Vector3(0, 0, 1).applyQuaternion(this.mesh.quaternion);
+        // Use actualMesh quaternion if available, otherwise use group quaternion
+        const eyeQuat = this.actualMesh && this.actualMesh.quaternion ? this.actualMesh.quaternion : this.quaternion;
+        const eyeForward = new T.Vector3(0, 0, 1).applyQuaternion(eyeQuat);
         const angle = Math.acos(T.MathUtils.clamp(eyeForward.dot(dir), -1, 1));
-        if (angle < CONFIG.eye.fov) {
+        if (angle < this.config.fov) {
           // Check line of sight (ray no obstacles)
-          const ray = new T.Raycaster(this.position, dir, 0, dist);
-          const hits = ray.intersectObjects(obstacles, true);
-          const blocked = hits.length > 0;
-          if (!blocked) {
-            // Player is spotted -> game over
-            return 'spotted';
+          if (obstacles && obstacles.length > 0) {
+            const ray = new T.Raycaster(this.position, dir, 0, dist);
+            const hits = ray.intersectObjects(obstacles, true);
+
+            let blocked = false;
+            for (const hit of hits) {
+              // Ignore transparent objects (like windows)
+              if (hit.object.material && hit.object.material.transparent) {
+                continue;
+              }
+              // If we hit something opaque closer than the player, vision is blocked
+              blocked = true;
+              break;
+            }
+
+            if (!blocked) {
+              // Player is spotted -> game over
+              return 'spotted';
+            }
           }
         }
       }
