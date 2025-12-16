@@ -1,5 +1,4 @@
 import * as THREE from '../CS559-Three/build/three.module.js';
-import { loadTextureSafely, createShineShader } from './load_texture.js'
 import { Door, Note, SlidingDrawer, Cabinet } from './objects.js';
 
 

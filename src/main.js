@@ -82,7 +82,7 @@ class Game {
     this.raycaster = new T.Raycaster();
     this.input = new Input(dom);
     this.collected = new Map(); // index -> value
-    this.prototypeMode = true;
+    this.prototypeMode = !dom.fullModeCheckbox.checked;
 
     // Setup Renderer with shadows enabled
     this.renderer = new T.WebGLRenderer({ antialias: true });
@@ -92,15 +92,8 @@ class Game {
     this.renderer.shadowMap.type = T.PCFSoftShadowMap;
     document.body.appendChild(this.renderer.domElement);
 
-    // Setup Scene and Camera
-    this.scene = new T.Scene();
-    this.scene.background = new T.Color(0x87CEEB);
-    this.camera = new T.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100);
-    this.camera.position.set(0, CONFIG.player.height, 0);
-
     // Audio Initialization
     this.listener = new T.AudioListener();
-    this.camera.add(this.listener);
 
     const audioLoader = new T.AudioLoader();
 
@@ -125,6 +118,10 @@ class Game {
         }
       });
     });
+
+    // Create The Scene
+    this.scene = new T.Scene();
+    this.scene.background = new T.Color(0x87CEEB);
 
     // Create Ambient Lighting
     const ambient = new T.AmbientLight(0xffffff, 0.9);
@@ -161,6 +158,8 @@ class Game {
     // UI
     dom.fullModeCheckbox.addEventListener('change', () => {
       // Only reset world if needed (for now, keep it simple and reset)
+      this.prototypeMode = !this.prototypeMode;
+      this.camera.position.y = CONFIG.player.height + 2;
       this.resetWorld();
     });
     dom.restartBtn.addEventListener('click', () => {
@@ -173,14 +172,21 @@ class Game {
       this.hideNotePopup();
     });
 
+    
+
+    this.resetWorld().catch(err => {
+      console.error(err);
+    });
+
+    // Setup the Camera
+    
+    this.camera = new T.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100);
+    this.camera.position.set(0, CONFIG.player.height + 2, 0);
+    this.camera.add(this.listener);
     window.addEventListener('resize', () => {
       this.camera.aspect = window.innerWidth / window.innerHeight;
       this.camera.updateProjectionMatrix();
       this.renderer.setSize(window.innerWidth, window.innerHeight);
-    });
-
-    this.resetWorld().catch(err => {
-      console.error(err);
     });
 
 
@@ -204,7 +210,6 @@ class Game {
     this.pitch = 0;
     this.velocity.set(0, 0, 0);
     this.isGrounded = false;
-    this.camera.position.set(0, CONFIG.player.height + 1, 0);
     this.hideOverlay();
     this.hideNotePopup();
     dom.noteCount.textContent = '0';
@@ -212,12 +217,12 @@ class Game {
     dom.objective.textContent = 'Find 3 notes with password pieces to unlock the basement.';
 
     // Materials for house
-    const floorMat =        await loadTextureSafely('textures/floor.jpg',     0x6b5b4f, this.prototypeMode);
-    const ceilingMat =      await loadTextureSafely('textures/ceiling.jpg',   0x5a5a5a, this.prototypeMode);
-    const wallMat =         await loadTextureSafely('textures/wall.jpg',      0x8b7d6b, this.prototypeMode);
-    const frameMat =        await loadTextureSafely('textures/frame.jpg',     0xFF00FF, this.prototypeMode);
-    const doorMat =         await loadTextureSafely('textures/door.jpg',      0x4a3a2a, this.prototypeMode);
-    const handleMat =       await loadTextureSafely('textures/handle.jpg',    0xaaaaaa, this.prototypeMode)
+    const floorMat =        await loadTextureSafely('./src/textures/floor.jpg',     0x6b5b4f, this.prototypeMode);
+    const ceilingMat =      await loadTextureSafely('./src/textures/ceiling.jpg',   0x5a5a5a, this.prototypeMode);
+    const wallMat =         await loadTextureSafely('./src/textures/wall.jpg',      0x8b7d6b, this.prototypeMode);
+    const frameMat =        await loadTextureSafely('./src/textures/frame.jpg',     0xFF00FF, this.prototypeMode);
+    const doorMat =         await loadTextureSafely('./src/textures/door.jpg',      0x4a3a2a, this.prototypeMode);
+    const handleMat =       await loadTextureSafely('./src/textures/handle.jpg',    0xaaaaaa, this.prototypeMode)
     const glassMat =        new T.MeshStandardMaterial({
       color: 0x99bbee,
       transparent: true,
@@ -225,12 +230,12 @@ class Game {
       roughness: 0.1,
       metalness: 0.1
     });
-    const couchMat =        await loadTextureSafely('textures/furniture.jpg', 0x5a4a3a, this.prototypeMode);
-    const bookshelfMat =    await loadTextureSafely('textures/bookshelf.jpg', 0xFF00FF, this.prototypeMode);
-    const drawerMat =       await loadTextureSafely('textures.drawer.jpg',    0x991155, this.prototypeMode)
-    const noteMat =         await loadTextureSafely('textures/note.jpg',      0xddddcc, this.prototypeMode);
-    const tableMat =        await loadTextureSafely('textures/table.jpg',     0x111111, this.prototypeMode)
-    const groundMat =       await loadTextureSafely('textures/ground.jpg',    0x97ff9e, this.prototypeMode);
+    const couchMat =        await loadTextureSafely('./src/textures/couch.jpg', 0x5a4a3a, this.prototypeMode);
+    const bookshelfMat =    await loadTextureSafely('./src/textures/bookshelf.jpg', 0xFF00FF, this.prototypeMode);
+    const drawerMat =       await loadTextureSafely('./src/textures/drawer.jpg',    0x991155, this.prototypeMode)
+    const noteMat =         await loadTextureSafely('./src/textures/note.jpg',      0xddddcc, this.prototypeMode);
+    const tableMat =        await loadTextureSafely('./src/textures/table.jpg',     0x111111, this.prototypeMode)
+    const groundMat =       await loadTextureSafely('./src/textures/ground.jpg',    0x97ff9e, this.prototypeMode);
     
 
     // House dimensions
