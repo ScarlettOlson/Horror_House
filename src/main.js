@@ -38,7 +38,7 @@ const CONFIG = {
     fov: T.MathUtils.degToRad(35),
   },
   interact: {
-    distance: 1.5, // Increased interaction distance
+    distance: 1.75, // Increased interaction distance
   },
   world: {
     gravity: -15.0, // gravity acceleration
@@ -184,22 +184,26 @@ class Game {
     dom.objective.textContent = 'Find 3 notes with password pieces to unlock the basement.';
 
     // Materials for house
-    const floorMat = await loadTextureSafely('textures/floor.jpg', 0x6b5b4f);
-    const wallMat = await loadTextureSafely('textures/wall.jpg', 0x8b7d6b);
-    const ceilingMat = await loadTextureSafely('textures/ceiling.jpg', 0x5a5a5a);
-    const doorMat = await loadTextureSafely('textures/door.jpg', 0x4a3a2a);
-    const bookshelfMat = await loadTextureSafely('textures/bookshelf.jpg', 0xFF00FF);
-    const frameMat = await loadTextureSafely('textures/frame.jpg', 0xFF00FF);
-    const noteMat = await loadTextureSafely('textures/note.jpg', 0xddddcc);
-    const furnitureMat = await loadTextureSafely('textures/furniture.jpg', 0x5a4a3a);
-    const groundMat = await loadTextureSafely('textures/ground.jpg', 0x97ff9e);
-    const windowMat = new T.MeshStandardMaterial({
+    const floorMat =        await loadTextureSafely('textures/floor.jpg',     0x6b5b4f, this.prototypeMode);
+    const ceilingMat =      await loadTextureSafely('textures/ceiling.jpg',   0x5a5a5a, this.prototypeMode);
+    const wallMat =         await loadTextureSafely('textures/wall.jpg',      0x8b7d6b, this.prototypeMode);
+    const frameMat =        await loadTextureSafely('textures/frame.jpg',     0xFF00FF, this.prototypeMode);
+    const doorMat =         await loadTextureSafely('textures/door.jpg',      0x4a3a2a, this.prototypeMode);
+    const handleMat =       await loadTextureSafely('textures/handle.jpg',    0xaaaaaa, this.prototypeMode)
+    const glassMat =        new T.MeshStandardMaterial({
       color: 0x99bbee,
       transparent: true,
       opacity: 0.3,
       roughness: 0.1,
       metalness: 0.1
     });
+    const couchMat =        await loadTextureSafely('textures/furniture.jpg', 0x5a4a3a, this.prototypeMode);
+    const bookshelfMat =    await loadTextureSafely('textures/bookshelf.jpg', 0xFF00FF, this.prototypeMode);
+    const drawerMat =       await loadTextureSafely('textures.drawer.jpg',    0x991155, this.prototypeMode)
+    const noteMat =         await loadTextureSafely('textures/note.jpg',      0xddddcc, this.prototypeMode);
+    const tableMat =        await loadTextureSafely('textures/table.jpg',     0x111111, this.prototypeMode)
+    const groundMat =       await loadTextureSafely('textures/ground.jpg',    0x97ff9e, this.prototypeMode);
+    
 
     // House dimensions
     const houseWidth = 20;
@@ -215,7 +219,8 @@ class Game {
     // Build the basic pieces of a house
     const house_pieces = objs.createHouse(
       houseWidth, houseHeight, houseDepth, wallThickness,
-      floorMat, wallMat, frameMat, doorMat, frameMat, windowMat, furnitureMat,
+      floorMat, ceilingMat, wallMat, frameMat, doorMat, handleMat, glassMat,
+      couchMat, bookshelfMat, drawerMat, noteMat, tableMat,
       this.prototypeMode
     );
     house.add(house_pieces.house);

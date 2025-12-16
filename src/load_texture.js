@@ -13,10 +13,13 @@ const protoMat = (color) => {
 /**
  * Utility: tries to load a texture, falls back to a procedural if missing
  */
-export function loadTextureSafely(url, fallbackColor = 0x777777) {
+export function loadTextureSafely(url, fallbackColor = 0x777777, isPrototype = false) {
   const loader = new T.TextureLoader();
 
   return new Promise((resolve) => {
+    if(isPrototype) {
+      return resolve(protoMat(fallbackColor));
+    }
     loader.load(
       url,
       tex => {

@@ -3,7 +3,11 @@ import { InteractiveCabinet, InteractiveDoor, InteractiveDrawer, InteractiveNote
 
 
 
-export function createHouse(w, h, d, t, floorMat, wallMat, frameMat, doorMat, handleMat, windowMat, couchMat, isPrototype) {
+export function createHouse(
+  w, h, d, t, 
+  floorMat, ceilingMat, wallMat, frameMat, doorMat, handleMat, glassMat,
+  couchMat, bookshelfMat, drawerMat, noteMat, tableMat, isPrototype
+) {
   const doorW = 1.5;
   const doorH = Math.min(h, 2.5);
 
@@ -22,7 +26,7 @@ export function createHouse(w, h, d, t, floorMat, wallMat, frameMat, doorMat, ha
   // obstacles.push(floor);
 
   // Build the exterior walls, windows, and doors of the house
-  const exterior = createHouseExterior(w, h, d, t, floorMat, wallMat, frameMat, doorMat, handleMat, windowMat);
+  const exterior = createHouseExterior(w, h, d, t, floorMat, wallMat, frameMat, doorMat, handleMat, glassMat);
   house.add(exterior.group);
   exterior.groundObjs.forEach(obj => groundObjs.push(obj));
   exterior.obstacles.forEach(obj => obstacles.push(obj));
@@ -36,7 +40,7 @@ export function createHouse(w, h, d, t, floorMat, wallMat, frameMat, doorMat, ha
   bedrooms.interactables.forEach(obj => interactables.push(obj));
 
   // Create the furniture inside of the bedrooms
-  const bedroomFurniture = createBedroomFurniture(doorMat, wallMat);
+  const bedroomFurniture = createBedroomFurniture(couchMat, frameMat, drawerMat, handleMat, bookshelfMat);
   bedroomFurniture.objects.forEach(obj => house.add(obj));
   bedroomFurniture.obstacles.forEach(obj => obstacles.push(obj));
   bedroomFurniture.interactables.forEach(obj => interactables.push(obj));
@@ -45,7 +49,7 @@ export function createHouse(w, h, d, t, floorMat, wallMat, frameMat, doorMat, ha
   const kitchen = createKitchen({
     x: 7, y: 0, z: 6.5,
     w: 6, h: h, d: 7,
-    wallT: t, wallMat: wallMat, drawerMat: doorMat, handleMat,
+    wallT: t, wallMat, drawerMat, handleMat,
     doorW, doorH
   });
   kitchen.objects.forEach(obj => house.add(obj));
@@ -53,7 +57,7 @@ export function createHouse(w, h, d, t, floorMat, wallMat, frameMat, doorMat, ha
   kitchen.interactables.forEach(obj => interactables.push(obj));
 
   // Create the dining Room
-  const diningRoom = createDiningRoom(h, t, wallMat, frameMat, doorW, doorH);
+  const diningRoom = createDiningRoom(h, t, wallMat, tableMat, doorW, doorH);
   diningRoom.objects.forEach(obj => house.add(obj));
   diningRoom.obstacles.forEach(obj => obstacles.push(obj));
 
@@ -64,7 +68,7 @@ export function createHouse(w, h, d, t, floorMat, wallMat, frameMat, doorMat, ha
   basementRoom.interactables.forEach(obj => interactables.push(obj));
 
   // Create the Living Room
-  const livingRoom = createLivingRoom(h, couchMat, wallMat, handleMat);
+  const livingRoom = createLivingRoom(h, couchMat, tableMat, drawerMat, handleMat);
   livingRoom.objects.forEach(obj => house.add(obj));
   livingRoom.obstacles.forEach(obj => obstacles.push(obj));
   livingRoom.interactables.forEach(obj => interactables.push(obj));
@@ -74,7 +78,7 @@ export function createHouse(w, h, d, t, floorMat, wallMat, frameMat, doorMat, ha
   const note1 = new InteractiveNote({
     passwordPiece: '26',
     content: 'I found this note hidden on the old bookshelf.\nIndex: 1\nPassword piece: 26',
-    material: frameMat,
+    material: noteMat,
     position: new T.Vector3(-2.3, 1.8, -6),
     passwordIndex: 0,
     useShineShader: !isPrototype,
@@ -83,7 +87,7 @@ export function createHouse(w, h, d, t, floorMat, wallMat, frameMat, doorMat, ha
   const note2 = new InteractiveNote({
     passwordPiece: '43',
     content: 'I found this note hidden in the bedroom closet\nIndex: 2\nPassword piece: 43',
-    material: frameMat,
+    material: noteMat,
     position: new T.Vector3(-6, 1.5, 2.2),
     passwordIndex: 1,
     useShineShader: !isPrototype,
@@ -92,7 +96,7 @@ export function createHouse(w, h, d, t, floorMat, wallMat, frameMat, doorMat, ha
   const note3 = new InteractiveNote({
     passwordPiece: '91',
     content: 'I found this note hidden in the kitchen cupboard\nIndex: 3\nPassword piece: 91',
-    material: frameMat,
+    material: noteMat,
     position: new T.Vector3(9.6, 1.5, 6.2),
     passwordIndex: 2,
     useShineShader: !isPrototype,
@@ -325,7 +329,7 @@ export function createBedroomWalls(h, t, doorW, doorH, wallMat, frameMat, doorMa
   return { group, obstacles, interactables };
 }
 
-export function createBedroomFurniture(mattressMat, frameMat) {
+export function createBedroomFurniture(bedMat, frameMat, drawerMat, handleMat, bookshelfMat) {
   let objects = [];
   let obstacles = [];
   let interactables = [];
@@ -333,18 +337,15 @@ export function createBedroomFurniture(mattressMat, frameMat) {
   // Create Beds for each of the rooms
   const bed1 = new Bed({
     x: -9.1, y: 0, z: 8.4, w: 1.5, h: 3, d: 3, mattressH: 0.5,
-    mattressMat: mattressMat, frameMat: frameMat,
-    rotationY: Math.PI
+    mattressMat: bedMat, frameMat, rotationY: Math.PI
   });
   const bed2 = new Bed({
     x: -8.4, y: 0, z: 1.1, w: 1.5, h: 3, d: 3, mattressH: 0.5,
-    mattressMat: mattressMat, frameMat: frameMat,
-    rotationY: Math.PI / 2
+    mattressMat: bedMat, frameMat, rotationY: Math.PI / 2
   });
   const bed3 = new Bed({
     x: -9.1, y: 0, z: -8.4, w: 1.5, h: 3, d: 3, mattressH: 0.5,
-    mattressMat: mattressMat, frameMat: frameMat,
-    rotationY: 0
+    mattressMat: bedMat, frameMat, rotationY: 0
   });
   objects.push(bed1, bed2, bed3);
   obstacles.push(bed1, bed2, bed3);
@@ -353,15 +354,15 @@ export function createBedroomFurniture(mattressMat, frameMat) {
   // Create nightstand beside beds
   const nightstand1 = new InteractiveDrawer({
     x: -7.75, y: 0, z: 9.5, w: 1, h: 3, d: 1,
-    drawerMat: frameMat, handleMat: mattressMat, rotationY: Math.PI
+    drawerMat, handleMat, rotationY: Math.PI
   });
   const nightstand2 = new InteractiveDrawer({
     x: -9.2, y: 0, z: -0.2, w: 1, h: 3, d: 1,
-    drawerMat: frameMat, handleMat: mattressMat, rotationY: Math.PI / 2
+    drawerMat, handleMat, rotationY: Math.PI / 2
   });
   const nightstand3 = new InteractiveDrawer({
     x: -7.75, y: 0, z: -9.3, w: 1, h: 3, d: 1,
-    drawerMat: frameMat, handleMat: mattressMat, rotationY: 0
+    drawerMat, handleMat, rotationY: 0
   });
   objects.push(nightstand1, nightstand2, nightstand3);
   obstacles.push(nightstand1, nightstand2, nightstand3);
@@ -370,27 +371,27 @@ export function createBedroomFurniture(mattressMat, frameMat) {
   // Create Bookshelfs for each of the rooms
   const bookShelf1 = new Bookshelf({
     x: -8.5, y: 0.05, z: 2.5, w: 0.8, h: 2, d: 3,
-    mat: frameMat, rotationY: -Math.PI / 2
+    mat: bookshelfMat, rotationY: -Math.PI / 2
   });
   const bookShelf2 = new Bookshelf({
     x: -3.5, y: 0.05, z: 2.5, w: 0.8, h: 2, d: 3,
-    mat: frameMat, rotationY: -Math.PI / 2
+    mat: bookshelfMat, rotationY: -Math.PI / 2
   });
   const bookShelf3 = new Bookshelf({
     x: -8.5, y: 0.05, z: -4.4, w: 0.8, h: 2, d: 3,
-    mat: frameMat, rotationY: -Math.PI / 2
+    mat: bookshelfMat, rotationY: -Math.PI / 2
   });
   const bookShelf4 = new Bookshelf({
     x: -3.5, y: 0.05, z: 1.4, w: 0.8, h: 2, d: 3,
-    mat: frameMat, rotationY: Math.PI / 2
+    mat: bookshelfMat, rotationY: Math.PI / 2
   });
   const bookShelf5 = new Bookshelf({
     x: -3.5, y: 0.05, z: -6, w: 0.8, h: 2, d: 3,
-    mat: frameMat, rotationY: Math.PI / 2
+    mat: bookshelfMat, rotationY: Math.PI / 2
   });
   const bookShelf6 = new Bookshelf({
     x: -8.5, y: 0.05, z: -6, w: 0.8, h: 2, d: 3,
-    mat: frameMat, rotationY: Math.PI / 2
+    mat: bookshelfMat, rotationY: Math.PI / 2
   });
 
   objects.push(bookShelf1, bookShelf2, bookShelf3, bookShelf4, bookShelf5, bookShelf6);
@@ -399,15 +400,15 @@ export function createBedroomFurniture(mattressMat, frameMat) {
   // Create Dressers
   const dresser1 = new InteractiveCabinet({
     x: -6, y: 1.25, z: 2.5, w: 2, h: 2.5, d: 1,
-    cabinetMat: frameMat, handleMat: mattressMat, openAngle: 5 * Math.PI / 6
+    cabinetMat: drawerMat, handleMat, openAngle: 5 * Math.PI / 6
   });
   const dresser2 = new InteractiveCabinet({
     x: -6, y: 1.25, z: -4.4, w: 2, h: 2.5, d: 1,
-    cabinetMat: frameMat, handleMat: mattressMat, openAngle: 5 * Math.PI / 6
+    cabinetMat: drawerMat, handleMat, openAngle: 5 * Math.PI / 6
   });
   const dresser3 = new InteractiveCabinet({
     x: -6, y: 1.25, z: -6, w: 2, h: 2.5, d: 1,
-    cabinetMat: frameMat, handleMat: mattressMat,
+    cabinetMat: drawerMat, handleMat,
     rotationY: Math.PI, openAngle: 5 * Math.PI / 6
   });
   objects.push(dresser1, dresser2, dresser3);
@@ -472,7 +473,7 @@ export function createKitchen({
       y: y + drawerW,
       z: z + wallT + ((i + 0.5) * drawerW),
       w: drawerW, h: 2 * drawerW, d: drawerW,
-      cabinetMat: drawerMat, handleMat: handleMat, rotationY: -Math.PI / 2
+      cabinetMat: drawerMat, handleMat, rotationY: -Math.PI / 2
     });
     objects.push(cabinet)
     obstacles.push(cabinet);
