@@ -2,6 +2,8 @@ import * as T from '../CS559-Three/build/three.module.js';
 import { InteractiveCabinet, InteractiveDoor, InteractiveDrawer, InteractiveNote, BasementDoor } from './interactive.js';
 import { createShineShader } from './load_texture.js';
 
+const twoPi = 2 * Math.PI;
+const halfPi = Math.PI / 2;
 
 
 export function createHouse(
@@ -735,12 +737,11 @@ export class WallWithPassage extends T.Group {
 const defaultObjParams = {
   position: new T.Vector3(0, 0, 0),
   scale: new T.Vector3(1, 1, 1),
-  mat: new T.MeshStandardMaterial({ color: "red" }),
+  material: new T.MeshStandardMaterial({ color: "red" }),
   rotationY: 0,
   castShadow: false,
   receiveShadow: false,
 }
-
 export class Wall extends T.Group {
   constructor(config) {
     // Create Group, set it's position, and set it's orientation
@@ -754,7 +755,7 @@ export class Wall extends T.Group {
     const height = this.scale.y;
     const thickness = this.scale.z;
 
-    this.mesh = new T.Mesh(new T.BoxGeometry(width, height, thickness), this.mat);
+    this.mesh = new T.Mesh(new T.BoxGeometry(width, height, thickness), this.Material);
     this.mesh.castShadow = this.castShadow;
     this.mesh.receiveShadow = this.receiveShadow;
     this.add(this.mesh);
@@ -773,7 +774,7 @@ export class Floor extends T.Group {
     const width = this.scale.x;
     const depth = this.scale.z;
 
-    this.mesh = new T.Mesh(new T.PlaneGeometry(width, depth), this.mat);
+    this.mesh = new T.Mesh(new T.PlaneGeometry(width, depth), this.Material);
     this.mesh.rotation.x = -Math.PI / 2;
     this.mesh.material.side = T.DoubleSide;
     this.mesh.receiveShadow = this.receiveShadow;
@@ -781,11 +782,16 @@ export class Floor extends T.Group {
   }
 }
 
+const defaultDoorParams = {
+  ...defaultObjParams,
+  frameMaterial: new T.MeshStandardMaterial({ color: "blue" }),
+  handleMaterial: new T.MeshStandardMaterial({ color: "silver" }),
+}
 export class Door extends T.Group {
   constructor(config) {
     // Create Group, set it's position, and set it's orientation
     super();
-    Object.assign(this, defaultObjParams, config);
+    Object.assign(this, defaultDoorParams, config);
     this.position.copy(this.position);
     this.rotation.y = this.rotationY;
 
@@ -796,15 +802,15 @@ export class Door extends T.Group {
 
     // Frame top
     const topGeometry = new T.BoxGeometry(width, thickness, thickness);
-    this.frameTop = new T.Mesh(topGeometry, this.mat);
-    this.frameTop.position.set(0, (height- thickness) / 2, 0);
+    this.frameTop = new T.Mesh(topGeometry, this.frameMaterial);
+    this.frameTop.position.set(0, (height - thickness) / 2, 0);
     this.frameTop.castShadow = this.castShadow;
     this.frameTop.receiveShadow = this.receiveShadow;
     this.add(this.frameTop);
 
     // Frame left
     const leftGeometry = new T.BoxGeometry(thickness, height, thickness);
-    this.frameLeft = new T.Mesh(leftGeometry, this.mat);
+    this.frameLeft = new T.Mesh(leftGeometry, this.frameMaterial);
     this.frameLeft.position.set((-width + thickness) / 2, 0, 0);
     this.frameLeft.castShadow = this.castShadow;
     this.frameLeft.receiveShadow = this.receiveShadow;
@@ -812,7 +818,7 @@ export class Door extends T.Group {
 
     // Frame right
     const rightGeometry = new T.BoxGeometry(thickness, height, thickness);
-    this.frameRight = new T.Mesh(rightGeometry, this.mat);
+    this.frameRight = new T.Mesh(rightGeometry, this.frameMaterial);
     this.frameRight.position.set((width - thickness) / 2, 0, 0);
     this.frameRight.castShadow = this.castShadow;
     this.frameRight.receiveShadow = this.receiveShadow;
@@ -821,7 +827,7 @@ export class Door extends T.Group {
     // Door with hinge
     this.hinge = new T.Object3D();
     const doorGeometry = new T.BoxGeometry(width - 2 * thickness, height - thickness, thickness);
-    this.door = new T.Mesh(doorGeometry, this.mat);
+    this.door = new T.Mesh(doorGeometry, this.frameMaterial);
     this.hinge.position.set(-(width - thickness) / 2, 0, 0);
     this.door.position.set((width - thickness) / 2, -thickness / 2, 0);
     this.door.castShadow = this.castShadow;
@@ -831,18 +837,22 @@ export class Door extends T.Group {
 
     // Handles
     const handleGeometry = new T.CylinderGeometry(0.03, 0.03, 0.15, 16);
-    const frontHandle = new T.Mesh(handleGeometry, this.mat);
+    const frontHandle = new T.Mesh(handleGeometry, this.handelMaterial);
     frontHandle.rotation.x = Math.PI / 2;
     frontHandle.position.set(3 * width / 4, 0, thickness / 2);
     this.hinge.add(frontHandle);
 
-    const backHandle = new T.Mesh(new T.CylinderGeometry(handleGeometry), this.mat);
+    const backHandle = new T.Mesh(new T.CylinderGeometry(handleGeometry), this.handleMaterial);
     backHandle.rotation.x = -Math.PI / 2;
     backHandle.position.set(3 * width / 4, 0, -thickness / 2);
     this.hinge.add(backHandle);
   }
 }
 
+const defaultWindowParams = {
+  ...defaultObjParams,
+  glassMaterial: new T.MeshStandardMaterial({ color: "silver" }),
+}
 export class Window extends T.Group {
   constructor(config) {
     // Create Group, set it's position, and set it's orientation
@@ -858,14 +868,14 @@ export class Window extends T.Group {
 
     // Frame top
     const horizontalGeometry = new T.BoxGeometry(width - thickness, thickness, thickness)
-    this.frameTop = new T.Mesh(horizontalGeometry, this.mat);
+    this.frameTop = new T.Mesh(horizontalGeometry, this.Material);
     this.frameTop.position.set(0, (height- thickness) / 2, 0);
     this.frameTop.castShadow = this.castShadow;
     this.frameTop.receiveShadow = this.receiveShadow;
     this.add(this.frameTop);
 
     // Frame bottom
-    this.frameBottom = new T.Mesh(horizontalGeometry, this.mat);
+    this.frameBottom = new T.Mesh(horizontalGeometry, this.Material);
     this.frameBottom.position.set(0, (-height+ thickness) / 2, 0);
     this.frameBottom.castShadow = this.castShadow;
     this.frameBottom.receiveShadow = this.receiveShadow;
@@ -873,32 +883,39 @@ export class Window extends T.Group {
 
     // Frame left
     const verticalGeometry = new T.BoxGeometry(thickness, height, thickness);
-    this.frameLeft = new T.Mesh(verticalGeometry, this.mat);
+    this.frameLeft = new T.Mesh(verticalGeometry, this.Material);
     this.frameLeft.position.set((-width + thickness) / 2, 0, 0);
     this.frameLeft.castShadow = this.castShadow;
     this.frameLeft.receiveShadow = this.receiveShadow;
     this.add(this.frameLeft);
 
     // Frame right
-    this.frameRight = new T.Mesh(verticalGeometry, this.mat);
+    this.frameRight = new T.Mesh(verticalGeometry, this.Material);
     this.frameRight.position.set((width - thickness) / 2, 0, 0);
     this.frameRight.castShadow = this.castShadow;
     this.frameRight.receiveShadow = this.receiveShadow;
     this.add(this.frameRight);
 
     // Glass
-    this.glass = new T.Mesh(new T.PlaneGeometry(width, height), this.mat);
+    this.glass = new T.Mesh(new T.PlaneGeometry(width, height), this.glassMaterial);
     this.glass.material.side = T.DoubleSide;
     this.glass.position.z = 0.05;
     this.add(this.glass);
   }
 }
 
+const defaultBookshelfParams = {
+  ...defaultObjParams,
+  wallThickness: 0.2,
+  shelfThickness: 0.1,
+  numShelves: 4,
+  shelfMaterial: new T.MeshStandardMaterial({ color: "Orange" }),
+}
 export class Bookshelf extends T.Group {
   constructor(config) {
     // Create Group, set it's position, and set it's orientation
     super();
-    Object.assign(this, defaultObjParams, config);
+    Object.assign(this, defaultBookshelfParams, config);
     this.position.copy(this.position);
     this.rotation.y = this.rotationY;
 
@@ -907,24 +924,89 @@ export class Bookshelf extends T.Group {
     const height = this.scale.y;
     const depth = this.scale.z;
 
-    const back = new T.Mesh(new T.BoxGeometry(0.1, height, depth), this.mat);
-    back.position.set(-width / 2, height/ 2, 0);
-    this.add(back);
+    // Parameter Saftey Checks
+    if(width/2 <= 2 * wallThickness) {
+      throw new EvalError("The shelf walls are too thick for the width");
+    }
+    const totalObjHeight = 2 * this.wallThickness +this.numShelves * this.shelfThickness;
+    if(height/2 <= totalObjHeight) {
+      throw new EvalError("The shelf walls and shelves are too thick for the height");
+    }
+    if(depth/2 <= this.wallThickness) {
+      throw new EvalError("The shelf walls are too thick for the depth");
+    }
 
-    const shelfCount = 4;
-    for (let i = 0; i < shelfCount; i++) {
-      const board = new T.Mesh(new T.BoxGeometry(width, 0.05, depth), this.mat);
-      board.position.set(0, (i) * (height/ (shelfCount)), 0);
-      this.add(board);
+    // Create the back wall
+    const backGeometry = new T.BoxGeometry(width, height, this.wallThickness);
+    const backWall = new T.Mesh(backGeometry, this.Material);
+    backWall.position.set(0, 0, (this.wallThickness - depth) / 2);
+    this.add(backWall);
+
+    // Create the Side Walls
+    const verticalDimensions = {
+      width: this.wallThickness,
+      height: this.height - this.wallThickness,
+      depth: depth - this.wallThickness,
+      widthSegments: 1,
+      heightSegments: 1,
+      depthSegments: 1,
+    }
+    const verticalGeometry = new T.BoxGeometry(...verticalDimensions);
+    const leftWall = new T.Mesh(verticalGeometry, this.Material);
+    const rightWall = new T.Mesh(verticalGeometry, this.Material);
+    leftWall.position.set((this.wallThickness - width) / 2, 0, 0);
+    rightWall.position.set((width - this.wallThickness) / 2, 0, 0);
+    this.add(leftWall, rightWall);
+
+    // Create the top and bottom walls
+    const horizontalDimensions = {
+      width: this.width - 2 * this.wallThickness,
+      height: this.wallThickness,
+      depth: depth - this.wallThickness,
+      widthSegments: 1,
+      heightSegments: 1,
+      depthSegments: 1,
+    };
+    const horizontalGeometry = new T.BoxGeometry(...horizontalDimensions);
+    const topWall = new T.Mesh(horizontalGeometry, this.Material);
+    const bottomWall = new T.Mesh(horizontalGeometry, this.Material);
+    topWall.position.set(0, (height - this.wallThickness) / 2, 0);
+    bottomWall.position.set(0, (this.wallThickness - height) / 2, 0);
+    this.add(topWall, bottomWall);
+
+    // Create Shelves
+    const shelfDimensions = {
+      width: width - 2 * this.thickness,
+      height: this.shelfThickness,
+      depth: depth - this.thickness,
+      widthSegments: 1,
+      heightSegments: 1,
+      depthSegments: 1,
+    }
+    const shelfGeometry = new T.BoxGeometry(...shelfDimensions);
+    const shelfSpacing = height / (this.numShelves + 2);
+    for (let i=1; i<=this.numShelves; i++) {
+      const shelf = new T.Mesh(shelfGeometry, this.shelfMaterial);
+      shelf.position.set(0, i * shelfSpacing, 0);
+      this.add(shelf);
     }
   }
 }
 
+const defaultTableParams = {
+  ...defaultObjParams,
+  legHeight: 0.75,
+  legRadius: 0.1,
+  legWidth: 0.75,
+  legDepth: 0.75, 
+  legMaterial: new T.MeshStandardMaterial({ color: "brown" }),
+  topThickness: 0.1,
+}
 export class Table extends T.Group {
   constructor(config) {
     // Create Group, set it's position, and set it's orientation
     super();
-    Object.assign(this, defaultObjParams, config);
+    Object.assign(this, defaultTableParams, config);
     this.position.copy(this.position);
     this.rotation.y = this.rotationY;
 
@@ -933,31 +1015,47 @@ export class Table extends T.Group {
     const height = this.scale.y;
     const depth = this.scale.z;
 
-    const top = new T.Mesh(new T.BoxGeometry(width, 0.05, depth), this.mat);
+    // Create the top of the table
+    const top = new T.Mesh(new T.BoxGeometry(width, this.topThickness, depth), this.Material);
     top.position.set(0, height, 0);
     this.add(top);
 
-    const legGeo = new T.BoxGeometry(0.05, height, 0.05);
+    const legParams = {
+      radiusTop: this.legRadius,
+      radiusBottom: this.legRadius,
+      height: height - this.topThickness,
+      radialSegments: 10,
+      heightSegments: 1,
+      openEnded: false,
+      thetaStart: 0,
+      thetaLength: twoPi,
+    }
+    const legGeometry = new T.CylinderGeometry(...legParams);
     const legPositions = [
-      [-width / 2 + 0.1, height/ 2, -depth / 2 + 0.1],
-      [width / 2 - 0.1, height/ 2, -depth / 2 + 0.1],
-      [-width / 2 + 0.1, height/ 2, depth / 2 - 0.1],
-      [width / 2 - 0.1, height/ 2, depth / 2 - 0.1],
+      [-this.legWidth/2, legParams.height, -this.legDepth/2],
+      [-this.legWidth/2, legParams.height, this.legDepth/2],
+      [this.legWidth/2, legParams.height, -this.legDepth/2],
+      [this.legWidth/2, legParams.height, this.legDepth/2],
     ];
 
     for (const [lx, ly, lz] of legPositions) {
-      const leg = new T.Mesh(legGeo, this.mat);
+      const leg = new T.Mesh(legGeo, this.legMaterial);
       leg.position.set(lx, ly, lz);
       this.add(leg);
     }
   }
 }
 
+const defaultCouchParams = {
+  ...defaultObjParams,
+  seatHeight: 0.5,
+  backDepth: 0.35,
+}
 export class Couch extends T.Group {
   constructor(config) {
     // Create Group, set it's position, and set it's orientation
     super();
-    Object.assign(this, defaultObjParams, config);
+    Object.assign(this, defaultCouchParams, config);
     this.position.copy(this.position);
     this.rotation.y = this.rotationY;
 
@@ -966,21 +1064,34 @@ export class Couch extends T.Group {
     const height = this.scale.y;
     const depth = this.scale.z;
 
-    const base = new T.Mesh(new T.BoxGeometry(width, height/ 2, depth), this.mat);
-    base.position.set(0, height/ 4, 0);
+    const seatGeometry = new T.BoxGeometry(width, this.seatHeight, depth);
+    const base = new T.Mesh(new T.BoxGeometry(seatGeometry, this.Material));
+    const seatY = (this.seatHeight - this.height) / 2;
+    base.position.set(0, seatY, 0);
     this.add(base);
 
-    const back = new T.Mesh(new T.BoxGeometry(width, height/ 2, 0.1), this.mat);
-    back.position.set(0, height* 0.75, -depth / 2 + 0.05);
+    const backGeometry = new T.BoxGeometry(width, height-this.seatHeight, this.backDepth);
+    const back = new T.Mesh(new T.BoxGeometry(backGeometry, this.Material));
+    const backY = this.seatHeight / 2;
+    back.position.set(0, backY , 0);
     this.add(back);
   }
 }
 
-export class Cabinet extends T.Group {
+const defaultDoorcabinetParams = {
+  ...defaultObjParams,
+  wallThickness: 0.05,
+  hingeSide: "left",
+  doorHeight: 0.5,
+  doorWidth: 0.5,
+  doorMaterial: new T.MeshStandardMaterial({ color: "green" }),
+  handleMaterial: new T.MeshStandardMaterial({ color: "silver" }),
+}
+export class DoorCabinet extends T.Group {
   constructor(config) {
     // Create Group, set it's position, and set it's orientation
     super();
-    Object.assign(this, defaultObjParams, config);
+    Object.assign(this, defaultDoorcabinetParams, config);
     this.position.copy(this.position);
     this.rotation.y = this.rotationY;
 
@@ -989,81 +1100,91 @@ export class Cabinet extends T.Group {
     const height = this.scale.y;
     const depth = this.scale.z;
 
-    // --- Cabinet body ---
-    const wallThickness = width / 20;
+    // Parameter Saftey Check
+    if(width < 2*this.wallThickness + doorWidth) {
+      throw new EvalError("The cabinet is not wide enough for the given parameters");
+    }
+    if(height <= 2*this.wallThickness + doorHeight) {
+      throw new EvalError("The cabinet is not tall enough for the given parameters");
+    }
+    if(depth <= 2*this.wallThickness) {
+      throw new EvalError("The cabinet is not deep enough for the given parameters");
+    }
 
-    // Back wall
-    const backGeom = new T.BoxGeometry(width, height, wallThickness);
-    const backMesh = new T.Mesh(backGeom, this.mat);
-    backMesh.position.set(0, 0, -depth / 2 + wallThickness / 2);
-    this.add(backMesh);
+    // Create the back wall
+    const backGeometry = new T.BoxGeometry(width, height, this.wallThickness);
+    const backWall = new T.Mesh(backGeometry, this.Material);
+    backWall.position.set(0, 0, (this.wallThickness - depth) / 2);
+    this.add(backWall);
 
-    // Left wall
-    const sideGeom = new T.BoxGeometry(wallThickness, height, depth);
-    const leftMesh = new T.Mesh(sideGeom, this.mat);
-    leftMesh.position.set(-width / 2 + wallThickness / 2, 0, 0);
-    this.add(leftMesh);
+    // Create the Side Walls
+    const verticalDimensions = {
+      width: this.wallThickness,
+      height: this.height - this.wallThickness,
+      depth: depth - this.wallThickness,
+      widthSegments: 1,
+      heightSegments: 1,
+      depthSegments: 1,
+    }
+    const verticalGeometry = new T.BoxGeometry(...verticalDimensions);
+    const leftWall = new T.Mesh(verticalGeometry, this.Material);
+    const rightWall = new T.Mesh(verticalGeometry, this.Material);
+    leftWall.position.set((this.wallThickness - width) / 2, 0, 0);
+    rightWall.position.set((width - this.wallThickness) / 2, 0, 0);
+    this.add(leftWall, rightWall);
 
-    // Right wall
-    const rightMesh = new T.Mesh(sideGeom,this.mat);
-    rightMesh.position.set(width / 2 - wallThickness / 2, 0, 0);
-    this.add(rightMesh);
+    // Create the top and bottom walls
+    const horizontalDimensions = {
+      width: this.width - 2 * this.wallThickness,
+      height: this.wallThickness,
+      depth: depth - this.wallThickness,
+      widthSegments: 1,
+      heightSegments: 1,
+      depthSegments: 1,
+    };
+    const horizontalGeometry = new T.BoxGeometry(...horizontalDimensions);
+    const topWall = new T.Mesh(horizontalGeometry, this.Material);
+    const bottomWall = new T.Mesh(horizontalGeometry, this.Material);
+    topWall.position.set(0, (height - this.wallThickness) / 2, 0);
+    bottomWall.position.set(0, (this.wallThickness - height) / 2, 0);
+    this.add(topWall, bottomWall);
 
-    // Top
-    const topGeom = new T.BoxGeometry(width, wallThickness, depth);
-    const topMesh = new T.Mesh(topGeom, this.mat);
-    topMesh.position.set(0, height/ 2 - wallThickness / 2, 0);
-    this.add(topMesh);
-
-    // Bottom
-    const bottomMesh = new T.Mesh(topGeom, this.mat);
-    bottomMesh.position.set(0, -height/ 2 + wallThickness / 2, 0);
-    this.add(bottomMesh);
-
-    // --- Hinge (positioned on left side of cabinet opening) ---
+    // Create the hing
     this.hinge = new T.Group();
-    this.hinge.position.set(-width / 2 + wallThickness, 0, depth / 2 - wallThickness / 2);
+    if(this.hingeSide == "left") {
+      this.hinge.position.set((this.wallThickness - width) / 2, 0, depth / 2);
+    }
+    else if(this.hingeSide == "right") {
+      this.hinge.position.set((width - this.wallThickness) / 2, 0, depth / 2);
+    }
+    else {
+      throw new EvalError("Hinge Side: " + this.hingeSide + "is not a valid position");
+    }
     this.add(this.hinge);
 
-    // --- Door (attached to hinge) ---
-    const doorWidth = width - wallThickness * 2;
-    const doorHeight = height- wallThickness * 2;
+    // Create the door
     const doorGeom = new T.BoxGeometry(doorWidth, doorHeight, wallThickness);
-    const doorMesh = new T.Mesh(doorGeom, this.mat);
-    // Position door to the right of hinge, so it covers the opening
-    doorMesh.position.set(doorWidth / 2, 0, 0);
-    this.hinge.add(doorMesh);
+    const door = new T.Mesh(doorGeom, this.doorMaterial);
+    door.position.set(0, 0, (depth - this.wallThickness) / 2);
+    this.hinge.add(door);
+    this.door = door;
 
-    // --- Handle (attached to door, on the right side) ---
-    const handleRadius = width / 15;
-    const handleLength = depth / 12;
-    const handleGeom = new T.CylinderGeometry(
-      handleRadius,
-      handleRadius,
-      handleLength,
-      16
-    );
-    const handleCylinder = new T.Mesh(handleGeom, this.mat);
-    handleCylinder.rotation.x = Math.PI / 2;
-
-    // Sphere at end of handle
-    const sphereGeom = new T.SphereGeometry(handleRadius * 1.5, 16, 16);
-    const handleSphere = new T.Mesh(sphereGeom, this.mat);
-    handleSphere.position.set(0, 0, handleLength / 2);
-
-    // Group handle parts
-    this.handle = new T.Group();
-    this.handle.add(handleCylinder);
-    this.handle.add(handleSphere);
-    // Position handle on right side of door
-    this.handle.position.set(doorWidth * 0.4, 0, wallThickness / 2 + handleLength / 2);
-    doorMesh.add(this.handle);
-
-    // Store reference to door
-    this.door = doorMesh;
+    // TODO:    CREATE HANDLE SHAPE and add it to the door
+    const handleShape = new T.Curve();
   }
 }
 
+const defaultBedParams = {
+  ...defaultObjParams,
+  legHeight: 0.35,
+  legRadius: 0.1,
+  legWidth: 0.75,
+  legDepth: 0.75, 
+  legMaterial: new T.MeshStandardMaterial({ color: "brown" }),
+  mattressHeight: 0.2,
+  mattressMaterial: new T.MeshStandardMaterial({ color: "white" }),
+  headboardThickness: 0.1,
+}
 export class Bed extends T.Group {
   constructor(config) {
     // Create Group, set it's position, and set it's orientation
@@ -1077,155 +1198,252 @@ export class Bed extends T.Group {
     const height = this.scale.y;
     const depth = this.scale.z;
 
-    // --- Four leg posts ---
-    const postRadius = width / 40;
-    const postHeight = height/ 6;
-    const postGeom = new T.CylinderGeometry(postRadius, postRadius, postHeight, 16);
+    // Creat the legs of the bed
+    const legDimenions = {
+      radiusTop: this.legRadius,
+      radiusBottom: this.legRadius,
+      height: this.legHeight,
+      radialSegments: 16,
+      heightSegments: 1,
+      openEnded: false,
+      thetaStart: 0,
+      thetaLength: twoPi,
+    }
+    const legGeometry = new T.CylinderGeometry(...legDimenions);
+    const legPositions = [
+      [-this.legWidth / 2, (this.legHeight - height) / 2, -this.legDepth / 2],
+      [-this.legWidth / 2, (this.legHeight - height) / 2, this.legDepth / 2],
+      [this.legWidth / 2, (this.legHeight - height) / 2, -this.legDepth / 2],
+      [this.legWidth / 2, (this.legHeight - height) / 2, this.legDepth / 2],
+    ]
+    legPositions.forEach(([lx, ly, lz]) => {
+      const leg = new T.Mesh(legGeometry, this.legMaterial);
+      leg.position.set(lx, ly, lz);
+      this.add(leg);
+    });
 
-    // Front left post
-    const frontLeft = new T.Mesh(postGeom, this.mat);
-    frontLeft.position.set(-width / 2 + postRadius * 2, postHeight / 2, depth / 2 - postRadius * 2);
-    this.add(frontLeft);
+    // Create the mattress
+    const mattressGeometry = new T.BoxGeometry(width, this.mattressHeight, depth-this.headboardThickness);
+    const mattress = new T.Mesh(mattressGeometry, this.mattressMaterial);
+    mattress.position.set(0, this.legHeight + (this.mattressHeight - height) / 2, this.headboardThickness);
+    this.add(mattress);
 
-    // Front right post
-    const frontRight = new T.Mesh(postGeom, this.mat);
-    frontRight.position.set(width / 2 - postRadius * 2, postHeight / 2, depth / 2 - postRadius * 2);
-    this.add(frontRight);
+    // Create the headboard
+    const headboardShape = new T.Shape();
+    headboardShape.moveTo(-width/2, this.legHeight);
+    headboard.lineTo(-width/2, 2 * height / 3);
+    headboard.quadraticBezierCurve(0, height, width/2, 2 * height / 3);
+    headboard.lineTo(width/2, this.legHeight);
+    headboard.lineTo(-width/2, this.legHeight);
+    const headboardExtrudeSettings = {
+      depth: this.headboardThickness,
+      steps: 1,
+      bevelEnabled: false,
+      bevelThickness: 0.1,
+      bevelSize: 0.1,
+    };
 
-    // Back left post
-    const backLeft = new T.Mesh(postGeom, this.mat);
-    backLeft.position.set(-width / 2 + postRadius * 2, postHeight / 2, -depth / 2 + postRadius * 2);
-    this.add(backLeft);
-
-    // Back right post
-    const backRight = new T.Mesh(postGeom, this.mat);
-    backRight.position.set(width / 2 - postRadius * 2, postHeight / 2, -depth / 2 + postRadius * 2);
-    this.add(backRight);
-
-    // --- Mattress ---
-    const mattressGeom = new T.BoxGeometry(width, this.mattressH || 0.2, depth);
-    const mattressMesh = new T.Mesh(mattressGeom, this.mat);
-    mattressMesh.position.set(0, postHeight + (this.mattressH || 0.2) / 2, 0);
-    this.add(mattressMesh);
-
-    // --- Headboard ---
-    const headboardThickness = width / 20;
-    const headboardHeight = height* 0.6;
-    const headboardGeom = new T.BoxGeometry(width, headboardHeight, headboardThickness);
-    const headboardMesh = new T.Mesh(headboardGeom, this.mat);
-    headboardMesh.position.set(0, postHeight + headboardHeight / 2, -depth / 2 - headboardThickness / 2);
-    this.add(headboardMesh);
-
-    // Store references
-    this.mattress = mattressMesh;
-    this.headboard = headboardMesh;
-    this.posts = [frontLeft, frontRight, backLeft, backRight];
+    const headboardGeometry = new T.ExtrudeGeometry(headboardShape, headboardExtrudeSettings);
+    const headboard = new T.Mesh(headboardGeometry, this.Material);
+    headboard.position.set(0, -height/2, (this.headboardThickness - depth) / 2);
+    this.add(headboard);
   }
 }
 
 
-export class SlidingDrawer extends T.Group {
+const defaultDrawercabinetParams = {
+  ...defaultObjParams,
+  wallThickness: 0.1,
+  drawerWidth: 0.5,
+  drawerHeight: 0.2,
+  drawerDepth: 0.8,
+  drawerMaterial: new T.MeshStandardMaterial({ color:"green" }),
+  handleMaterial: new T.MeshStandardMaterial({ color:"silve" }),
+}
+export class DrawerCabinet extends T.Group {
   constructor({ x, y, z, w, h, d, drawerMat, handleMat, rotationY }) {
+    // Create Group, set it's position, and set it's orientation
     super();
-    // Position the whole drawer group
-    this.position.set(x, y, z);
-    this.rotation.y = rotationY;
+    Object.assign(this, defaultDrawercabinetParams, config);
+    this.position.copy(this.position);
+    this.rotation.y = this.rotationY;
 
-    // --- Cabinet body (bottom 2/3) ---
-    const bodyHeight = (2 * h) / 3;
-    const bodyGeom = new T.BoxGeometry(w, bodyHeight, d);
-    const bodyMesh = new T.Mesh(bodyGeom, drawerMat);
-    bodyMesh.position.set(0, -h / 6, 0); // center body in lower part
-    this.add(bodyMesh);
+    // Get shape Params
+    const width = this.scale.x;
+    const height = this.scale.y;
+    const depth = this.scale.z;
+    const thick = this.wallThickness;
 
-    // --- Fixed top surface (doesn't move when drawer opens) ---
-    const wallThickness = h / 50; // thin top surface
-    const topGeom = new T.BoxGeometry(w, wallThickness, d);
-    const topMesh = new T.Mesh(topGeom, drawerMat);
-    topMesh.position.set(0, h / 2 - wallThickness, 0);
-    this.add(topMesh);
+    // Parameter Saftey Check
+    if(width < 2*thick + this.drawerWidth) {
+      throw new EvalError("The cabinet is not wide enough for the given parameters");
+    }
+    if(height <= 2*thick + this.drawerHeight) {
+      throw new EvalError("The cabinet is not tall enough for the given parameters");
+    }
+    if(depth <= thick + this.drawerDepth) {
+      throw new EvalError("The cabinet is not deep enough for the given parameters");
+    }
 
+    // Create the main body
+    const body = new OpenBox({ ...this });
+    this.add(body);
 
-    // --- Sliding drawer box (open front) ---
-    const drawerHeight = h / 3 - wallThickness;
-    const drawerDepth = d; // full depth to align with front
+    const drawerParams = {
+      position: new T.Vector3((height - thick) / 2, 0, 0),
+      scale: new T.Vector3(this.drawerWidth, this.drawerHeight, this.drawerDepth),
+      material: new T.MeshStandardMaterial({ color: "red" }),
+      openSide: "top",
+    }
+    const drawer = new OpenBox(drawerParams);
+    this.add(drawer);
+    this.drawer = drawer;
+  }
+}
 
+const defaultDrawerParams = {
+  ...defaultObjParams,
+  wallThickness: 0.1,
+  handleMaterial: new T.MeshStandardMaterial({ color: "silver" }),
+}
+class Drawer extends T.Group {
+  constructor(config) {
+    super();
+    Object.assign(this, defaultObjParams, config);
+    this.position.copy(this.position);
+    this.rotation.y = this.rotationY;
 
-    // Fixed edges where the drawer move
-    // Drawer back
-    const backStaticGeom = new T.BoxGeometry(w, drawerHeight, wallThickness);
-    const backStaticMesh = new T.Mesh(backStaticGeom, drawerMat);
-    backStaticMesh.position.set(0, drawerHeight, -drawerDepth / 2 + wallThickness / 2);
-    this.add(backStaticMesh);
+    // Get shape Params
+    const width = this.scale.x;
+    const height = this.scale.y;
+    const depth = this.scale.z;
+    const thick = this.wallThickness;
+    
+    // Create the box that the drawer sits in
+    const containerParams = { ...this };
+    containerParams.position = new T.Vector3(0, 0, 0);
+    const container = new OpenBox( containerParams );
+    this.add(container);
 
-    // Drawer left side
-    const sideStaticGeom = new T.BoxGeometry(wallThickness, drawerHeight, drawerDepth);
-    const leftStaticMesh = new T.Mesh(sideStaticGeom, drawerMat);
-    leftStaticMesh.position.set(-w / 2 + wallThickness / 2, drawerHeight, 0);
-    this.add(leftStaticMesh);
+    // Create the drawer and handle
+    const drawerParams = { ...this };
+    drawerParams.position = new T.Vector3(0, 0, 0);
+    drawerParams.scale = new T.Vector3(width-thick, height-thick, depth-thick);
+    const drawer = new OpenBox(drawerParams);
+    this.add(drawer);
 
-    // Drawer right side
-    const rightStaticMesh = new T.Mesh(sideStaticGeom, drawerMat);
-    rightStaticMesh.position.set(w / 2 - wallThickness / 2, drawerHeight, 0);
-    this.add(rightStaticMesh);
+    const handleParams = {...this};
+    handleParams.position = new T.Vector3(0, 0, 0);
+    handleParams.scale = new T.Vector3(.4, .2, .1); // Length, Height, Radius
+    handleParams.rotationY = halfPi;
+    const handle = new Handle(handleParams);
+    drawer.add(handle);
+  }
+}
 
+const defaultOpenBoxParams = {
+  ...defaultObjParams,
+  wallThickness: 0.1,
+  openSide: "front" // Options: front, back, left, right, top, bottom
+}
+/**
+ * Creates a box, the top of which is open
+ */
+class OpenBox extends T.Group {
+  constructor(config) {
+    // Create Group, set it's position, and set it's orientation
+    super();
+    Object.assign(this, defaultOpenBoxParams, config);
+    this.position.copy(this.position);
+    this.rotation.y = this.rotationY;
 
-    this.drawer = new T.Group();
-    this.drawer.position.set(0, drawerHeight, 0); // align with top of body
-    this.add(this.drawer);
+    // Get shape Params
+    const width = this.scale.x;
+    const height = this.scale.y;
+    const depth = this.scale.z;
+    const thick = this.wallThickness;
 
-    // Drawer bottom
-    const bottomGeom = new T.BoxGeometry(w, wallThickness, drawerDepth);
-    const bottomMesh = new T.Mesh(bottomGeom, drawerMat);
-    bottomMesh.position.set(0, -drawerHeight / 2 + wallThickness / 2, 0);
-    this.drawer.add(bottomMesh);
+    // Create the bottom and top sides
+    const verticalGeometry = new T.BoxGeometry(width, thick, depth);
+    if(this.openSide != "bottom") {
+      const bottom = new T.Mesh(verticalGeometry, this.Material);
+      bottom.position.set(0, (thick - height) / 2, 0);
+      this.add(bottom);
+    }
+    if(this.openSide != "top") {
+      const top = new T.Mesh(verticalGeometry, this.Material);
+      top.position.set(0, (height - thick) / 2, 0);
+    }
+    
+    // Create the left and right sides
+    const lateralGeometry = new T.BoxGeometry(thick, height - (2*thick), depth);
+    if(this.openSide != "left") {
+      const left = new T.Mesh(lateralGeometry, this.Material);
+      left.position.set((thick - width) / 2, 0, 0);
+      this.add(left)
+    }
+    if(this.openSide != "right") {
+      const right = new T.Mesh(lateralGeometry, this.Material);
+      right.position.set((width - thick) / 2, 0, 0);
+      this.add(right)
+    }
 
-    // Drawer back
-    const backGeom = new T.BoxGeometry(w, drawerHeight, wallThickness);
-    const backMesh = new T.Mesh(backGeom, drawerMat);
-    backMesh.position.set(0, 0, -drawerDepth / 2 + wallThickness / 2);
-    this.drawer.add(backMesh);
+    // Create the back and front sides
+    const longitudinalGeometry = new T.BoxGeometry(width - (2*thick), height - (2*thick), thick);
+    if(this.openSide != "back") {
+      const back = new T.Mesh(longitudinalGeometry, this.Material);
+      back.position.set(0, 0, (depth - thick) / 2);
+      this.add(back);
+    }
+    if(this.openSide != "front") {
+      const front = new T.Mesh(longitudinalGeometry, this.Material);
+      front.position.set(0, 0, (thick - depth) / 2);
+      this.add(front)
+    }
+  }
+}
 
-    // Drawer left side
-    const sideGeom = new T.BoxGeometry(wallThickness, drawerHeight, drawerDepth);
-    const leftMesh = new T.Mesh(sideGeom, drawerMat);
-    leftMesh.position.set(-w / 2 + wallThickness / 2, 0, 0);
-    this.drawer.add(leftMesh);
+class Handle extends T.Group {
+  constructor(config) {
+    super();
+    Object.assign(this, defaultObjParams, config);
+    this.position.copy(this.position);
+    this.rotation.y = this.rotationY;
+    
+    // Get shape Params
+    const length = this.scale.x;
+    const height = this.scale.y;
+    const radius = this.scale.z;
+    
+    // Create all vectors in a list
+    const handlePnts = [
+      new T.Vector3(0, length/2, 0),                  // Bottom of first horizontal
+      new T.Vector3(0, length/2, height - radius),    // Top of first horizontal
 
-    // Drawer right side
-    const rightMesh = new T.Mesh(sideGeom, drawerMat);
-    rightMesh.position.set(w / 2 - wallThickness / 2, 0, 0);
-    this.drawer.add(rightMesh);
+      new T.Vector3(0, length/2, height),             // Arc1 control point
 
-    // Drawer front face
-    const frontGeom = new T.BoxGeometry(w, drawerHeight, wallThickness);
-    const frontMesh = new T.Mesh(frontGeom, drawerMat);
-    frontMesh.position.set(0, 0, drawerDepth / 2 - wallThickness / 2);
-    this.drawer.add(frontMesh);
+      new T.Vector3(0, length/2 - radius, height),    // First Vertical point
+      new T.Vector3(0, radius - length/2, height),    // Second Vertical point
 
-    // --- Improved Handle (cylinder + sphere) ---
-    const handleRadius = w / 15; // smaller than before
-    const handleLength = d / 12;
-    const handleGeom = new T.CylinderGeometry(
-      handleRadius,
-      handleRadius,
-      handleLength,
-      16
-    );
-    const handleCylinder = new T.Mesh(handleGeom, handleMat);
-    handleCylinder.rotation.x = Math.PI / 2;
+      new T.Vector3(0, -length/2, height),            // Arc2 control point
 
-    // Sphere at end of handle
-    const sphereGeom = new T.SphereGeometry(handleRadius * 1.5, 16, 16);
-    const handleSphere = new T.Mesh(sphereGeom, handleMat);
-    handleSphere.position.set(0, 0, handleLength / 2);
-
-    // Group handle parts
-    this.handle = new T.Group();
-    this.handle.add(handleCylinder);
-    this.handle.add(handleSphere);
-    this.handle.position.set(0, 0, drawerDepth / 2 + handleLength / 2);
-    this.drawer.add(this.handle);
+      new T.Vector3(0, -length/2, height - radius),   // Top of second horizontal
+      new T.Vector3(0, -length/2, 0),                 // Bottom of second horizontal
+    ];
+    
+    // Create the path with smooth arcs using the vectors from the list
+    const handlePath = new T.CurvePath();
+    
+    handlePath.add( new T.LineCurve3(handlePnts[0], handlePnts[1]) );
+    handlePath.add( new T.QuadraticBezierCurve3(handlePnts[1], handlePnts[2], handlePnts[3]) );
+    handlePath.add( new T.LineCurve3(handlePnts[3], handlePnts[4]) );
+    handlePath.add( new T.QuadraticBezierCurve3(handlePnts[4], handlePnts[5], handlePnts[6]) );
+    handlePath.add( new T.LineCurve3(handlePnts[6], handlePnts[7]) );
+    
+    // Create tube geometry
+    const tubeGeometry = new T.TubeGeometry(handlePath, 64, radius, 16, false);
+    const tubeMesh = new T.Mesh(tubeGeometry, this.Material);
+    this.add(tubeMesh);
   }
 }
 

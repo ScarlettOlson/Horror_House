@@ -1,5 +1,5 @@
 import * as THREE from '../CS559-Three/build/three.module.js';
-import { Door, Note, SlidingDrawer, Cabinet } from './objects.js';
+import { Door, Note, DrawerCabinet, DoorCabinet } from './objects.js';
 
 
 
@@ -159,7 +159,7 @@ export class InteractiveDrawer extends Interactable {
     this.extend = extend;
     this.position.set(x, y, z);
 
-    const mesh = new SlidingDrawer({ x: 0, y: 0, z: 0, w, h, d, drawerMat, handleMat, rotationY });
+    const mesh = new DrawerCabinet({ x: 0, y: 0, z: 0, w, h, d, drawerMat, handleMat, rotationY });
     this.add(mesh);
     this.drawer = mesh.drawer;
   }
@@ -197,7 +197,7 @@ export class InteractiveCabinet extends Interactable {
     this.position.set(x, y, z);
 
     // Create the cabinet door
-    this.cabinet = new Cabinet({ x: 0, y: 0, z: 0, w, h, d, cabinetMat, handleMat, rotationY });
+    this.cabinet = new DoorCabinet({ x: 0, y: 0, z: 0, w, h, d, cabinetMat, handleMat, rotationY });
     this.add(this.cabinet);
 
     // Door state
