@@ -1,3 +1,4 @@
+import { texture } from 'three/tsl';
 import * as T from '../CS559-Three/build/three.module.js';
 import { loadTextureSafely } from './load_texture.js';
 const twoPi = 2 * Math.PI;
@@ -6,37 +7,39 @@ const halfPi = Math.PI / 2;
 const defaultObjParams = {
   position: new T.Vector3(0, 0, 0),
   scale: new T.Vector3(1, 1, 1),
-  material: new T.MeshStandardMaterial({ color:0x6b5b4f }),
+  material: new T.MeshStandardMaterial({ color: 0x6b5b4f }),
   rotationY: 0,
   castShadow: false,
   receiveShadow: false,
-  useTextures: true
+  useTextures: true,
+  textureSpacingX: 1,  // Texture repeats per unit in X
+  textureSpacingY: 1,  // Texture repeats per unit in Y
 }
+
 export class Object extends T.Group {
-    constructor(defaultParams, config) {
-        super();
-
-        Object.assign(this, defaultParams, config)
-
-        this.position.copy(this.position);
-        this.rotation.y = this.rotationY;
-
-        this.mesh.castShadow = this.castShadow;
-        this.mesh.receiveShadow = this.receiveShadow;
-
-
-
+  constructor(defaultParams, config) {
+    super();
+    Object.assign(this, defaultParams, config)
+    this.position.copy(this.position);
+    this.rotation.y = this.rotationY;
+    this.mesh.castShadow = this.castShadow;
+    this.mesh.receiveShadow = this.receiveShadow;
+  }
+  
+  async loadTexture(mesh, texturePath, material, width=1, height=1) {
+    if(this.useTextures) {
+      material = await loadTextureSafely(texturePath, material);
+      
+      // Apply texture repeating based on dimensions and spacing
+      if(material.map) {
+        material.map.repeat.set(
+          width / this.textureSpacingX,
+          height / this.textureSpacingY
+        );
+      }
     }
-    async loadTexture(mesh, texturePath, material) {
-        if(this.useTextures){
-            material = await loadTextureSafely(
-                texturePath,
-                material
-            );
-        } // Attempt to load texture
-
-        mesh.material = material; // Set material
-    }
+    mesh.material = material;
+  }
 }
 // ------------------------------------ Objects that use the base parameters only -----------------
 
@@ -58,7 +61,7 @@ export class Floor extends Object {
     this.add(this.mesh);
 
     // Load material asynchronously if needed
-    this.loadTexture(this.mesh, './src/textures/floor.jpg', this.material);
+    this.loadTexture(this.mesh, './src/textures/floor.jpg', this.material, width, depth);
   }
 }
 
@@ -109,7 +112,7 @@ export class Handle extends Object {
     this.add(tubeMesh);
 
     // Load material asynchronously if needed
-    this.loadTexture(tubeMesh, './src/textures/handle.jpg', this.material)
+    this.loadTexture(tubeMesh, './src/textures/handle.jpg', this.material, twoPi*radius, length + 2*height);
   }
 }
 
@@ -124,7 +127,6 @@ export class Note extends Object {
         // Get shape Params
         const width = this.scale.x;
         const height = this.scale.y;
-        const depth = this.scale.z;
 
         // Create a visual representation (paper/note) - make it bigger and vertical
         const planeGeometry = new T.PlaneGeometry(0.3, 0.4);
@@ -148,7 +150,7 @@ export class Note extends Object {
         this.add(this.glow);
 
         // Load material asynchronously if needed
-        this.loadTexture(this.mesh, './src/textures/paper.jpg',  this.material);
+        this.loadTexture(this.mesh, './src/textures/paper.jpg',  this.material, width, height);
     }
 }
 
@@ -173,7 +175,7 @@ export class Wall extends Object {
 
 
     // Load material asynchronously if needed
-    this.loadTexture(this.mesh, './src/textures/wall.jpg',  this.material);
+    this.loadTexture(this.mesh, './src/textures/wall.jpg',  this.material, width, height);
   }
 }
 
@@ -224,7 +226,7 @@ export class Bed extends Object {
       this.add(leg);
 
       // Load material asynchronously if needed
-        this.loadTexture(leg, './src/textures/leg.jpg',  this.legMaterial);
+      this.loadTexture(leg, './src/textures/leg.jpg',  this.legMaterial, twoPi*this.legRadius, this.legHeight);
     });
 
     // Create the mattress
@@ -232,7 +234,7 @@ export class Bed extends Object {
     const mattress = new T.Mesh(mattressGeometry);
     mattress.position.set(0, this.legHeight + (this.mattressHeight - height) / 2, this.headboardThickness);
     this.add(mattress);
-    this.loadTexture(mattress, './src/textures/mattress.jpg', this.mattressMaterial);
+    this.loadTexture(mattress, './src/textures/mattress.jpg', this.mattressMaterial, width, this.mattressHeight);
 
     // Create the headboard
     const headboardShape = new T.Shape();
@@ -250,10 +252,10 @@ export class Bed extends Object {
     };
 
     const headboardGeometry = new T.ExtrudeGeometry(headboardShape, headboardExtrudeSettings);
-    const headboard = new T.Mesh(headboardGeometry, this.Material);
+    const headboard = new T.Mesh(headboardGeometry);
     headboard.position.set(0, -height/2, (this.headboardThickness - depth) / 2);
     this.add(headboard);
-    this.loadTexture(headboard, './src/textures/headboard.jpg', this.material);
+    this.loadTexture(headboard, './src/textures/headboard.jpg', this.material, width, height-this.legHeight);
   }
 }
 
@@ -292,9 +294,10 @@ export class Bookshelf extends Object {
 
     // Create the back wall
     const backGeometry = new T.BoxGeometry(width, height, this.wallThickness);
-    const backWall = new T.Mesh(backGeometry, this.Material);
+    const backWall = new T.Mesh(backGeometry);
     backWall.position.set(0, 0, (this.wallThickness - depth) / 2);
     this.add(backWall);
+    this.loadTexture(backWall, './src/textures/shelf.jpg', this.material, width, height)
 
     // Create the Side Walls
     const verticalDimensions = {
@@ -311,8 +314,8 @@ export class Bookshelf extends Object {
     leftWall.position.set((this.wallThickness - width) / 2, 0, 0);
     rightWall.position.set((width - this.wallThickness) / 2, 0, 0);
     this.add(leftWall, rightWall);
-    this.loadTexture(leftWall, './src/textures/shelf.jpg', this.material);
-    this.loadTexture(rightWall, './src/textures/shelf.jpg', this.material);
+    this.loadTexture(leftWall, './src/textures/shelf.jpg', this.material, verticalDimensions.depth, verticalDimensions.height);
+    this.loadTexture(rightWall, './src/textures/shelf.jpg', this.material, verticalDimensions.depth, verticalDimensions.height);
 
     // Create the top and bottom walls
     const horizontalDimensions = {
@@ -329,8 +332,8 @@ export class Bookshelf extends Object {
     topWall.position.set(0, (height - this.wallThickness) / 2, 0);
     bottomWall.position.set(0, (this.wallThickness - height) / 2, 0);
     this.add(topWall, bottomWall);
-    this.loadTexture(topWall, './src/textures/shelf.jpg', this.material);
-    this.loadTexture(bottomWall, './src/textures/shelf.jpg', this.material);
+    this.loadTexture(topWall, './src/textures/shelf.jpg', this.material, horizontalDimensions.width, horizontalDimensions.height);
+    this.loadTexture(bottomWall, './src/textures/shelf.jpg', this.material, horizontalDimensions.width, horizontalDimensions.height);
 
     // Create Shelves
     const shelfDimensions = {
@@ -347,7 +350,7 @@ export class Bookshelf extends Object {
       const shelf = new T.Mesh(shelfGeometry);
       shelf.position.set(0, i * shelfSpacing, 0);
       this.add(shelf);
-      this.loadTexture(shelf, './src/textures/shelf.jpg', this.shelfMaterial);
+      this.loadTexture(shelf, './src/textures/shelf.jpg', this.shelfMaterial, shelfDimensions.width, shelfDimensions.depth);
     }
   }
 }
@@ -369,16 +372,16 @@ export class Couch extends Object {
     const depth = this.scale.z;
 
     const seatGeometry = new T.BoxGeometry(width, this.seatHeight, depth);
-    const seat = new T.Mesh(new T.BoxGeometry(seatGeometry));
+    const seat = new T.Mesh(seatGeometry);
     base.position.set(0, (this.seatHeight - this.height) / 2, 0);
     this.add(base);
-    this.loadTexture(seat, './src/textures/couch.jpg', this.material)
+    this.loadTexture(seat, './src/textures/couch.jpg', this.material, width, depth)
 
     const backGeometry = new T.BoxGeometry(width, height-this.seatHeight, this.backDepth);
-    const back = new T.Mesh(new T.BoxGeometry(backGeometry));
+    const back = new T.Mesh(backGeometry);
     back.position.set(0, this.seatHeight / 2 , 0);
     this.add(back);
-    this.loadTexture(back, './src/textures/couch.jpg', this.material)
+    this.loadTexture(back, './src/textures/couch.jpg', this.material, width, height-this.seatHeight)
   }
 }
 
