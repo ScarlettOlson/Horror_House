@@ -1,6 +1,6 @@
 import * as T from '../CS559-Three/build/three.module.js';
-import { InteractiveCabinet, InteractiveDoor, InteractiveDrawer, InteractiveNote, BasementDoor } from './interactive.js';
-import { createShineShader } from './load_texture.js';
+import { InteractiveCabinet, InteractiveDoor, InteractiveDrawerCabinet, InteractiveNote, BasementDoor } from './interactive.js';
+import { Door, Note } from './simple_objects.js';
 
 const twoPi = 2 * Math.PI;
 const halfPi = Math.PI / 2;
@@ -355,15 +355,15 @@ export function createBedroomFurniture(bedMat, frameMat, drawerMat, handleMat, b
 
 
   // Create nightstand beside beds
-  const nightstand1 = new InteractiveDrawer({
+  const nightstand1 = new InteractiveDrawerCabinet({
     x: -7.75, y: 0, z: 9.5, w: 1, h: 3, d: 1,
     drawerMat, handleMat, rotationY: Math.PI
   });
-  const nightstand2 = new InteractiveDrawer({
+  const nightstand2 = new InteractiveDrawerCabinet({
     x: -9.2, y: 0, z: -0.2, w: 1, h: 3, d: 1,
     drawerMat, handleMat, rotationY: Math.PI / 2
   });
-  const nightstand3 = new InteractiveDrawer({
+  const nightstand3 = new InteractiveDrawerCabinet({
     x: -7.75, y: 0, z: -9.3, w: 1, h: 3, d: 1,
     drawerMat, handleMat, rotationY: 0
   });
@@ -456,7 +456,7 @@ export function createKitchen({
   const drawerW = w / 5;
   //const drawerH = 1.25 * drawerW;
   for (let i = -2; i < 2; i++) {
-    const drawer = new InteractiveDrawer({
+    const drawer = new InteractiveDrawerCabinet({
       x: x + wallT / 2 + (i * drawerW),
       y: y + drawerW / 2,
       z: z + (d - drawerW) / 2,
@@ -603,10 +603,10 @@ export function createLivingRoom(h, couchMat, tableMat, drawerMat, handleMat) {
   const table = new Table({
     x:4, y:0, z:-8, w:1.5, h:1, d:3, mat:tableMat,
   });
-  const drawer1 = new InteractiveDrawer({
+  const drawer1 = new InteractiveDrawerCabinet({
     x:3.1, y:0.75, z:-3.7, w:1.5, h:1.25, d:1.25, drawerMat, handleMat, rotationY:Math.PI
   });
-  const drawer2 = new InteractiveDrawer({
+  const drawer2 = new InteractiveDrawerCabinet({
     x:1.6, y:0.75, z:-3.7, w:1.5, h:1.25, d:1.25, drawerMat, handleMat, rotationY:Math.PI
   });
   objects.push(couch, table, drawer1, drawer2);
@@ -731,7 +731,7 @@ export class WallWithPassage extends T.Group {
 }
 
 
-const defaultDoorcabinetParams = {
+export const defaultDoorCabinetParams = {
   ...defaultObjParams,
   wallThickness: 0.05,
   hingeSide: "left",
@@ -744,7 +744,7 @@ export class DoorCabinet extends T.Group {
   constructor(config) {
     // Create Group, set it's position, and set it's orientation
     super();
-    Object.assign(this, defaultDoorcabinetParams, config);
+    Object.assign(this, defaultDoorCabinetParams, config);
     this.position.copy(this.position);
     this.rotation.y = this.rotationY;
 
@@ -828,7 +828,7 @@ export class DoorCabinet extends T.Group {
 }
 
 
-const defaultDrawercabinetParams = {
+export const defaultDrawerCabinetParams = {
   ...defaultObjParams,
   wallThickness: 0.1,
   drawerWidth: 0.5,
@@ -841,7 +841,7 @@ export class DrawerCabinet extends T.Group {
   constructor({ x, y, z, w, h, d, drawerMat, handleMat, rotationY }) {
     // Create Group, set it's position, and set it's orientation
     super();
-    Object.assign(this, defaultDrawercabinetParams, config);
+    Object.assign(this, defaultDrawerCabinetParams, config);
     this.position.copy(this.position);
     this.rotation.y = this.rotationY;
 
@@ -879,7 +879,7 @@ export class DrawerCabinet extends T.Group {
 }
 
 
-const defaultDrawerParams = {
+export const defaultDrawerParams = {
   ...defaultObjParams,
   wallThickness: 0.1,
   handleMaterial: new T.MeshStandardMaterial({ color: "silver" }),

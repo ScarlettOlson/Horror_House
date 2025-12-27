@@ -1,10 +1,11 @@
 import { texture } from 'three/tsl';
 import * as T from '../CS559-Three/build/three.module.js';
 import { loadTextureSafely } from './load_texture.js';
+
 const twoPi = 2 * Math.PI;
 const halfPi = Math.PI / 2;
 
-const defaultObjParams = {
+export const defaultObjParams = {
   position: new T.Vector3(0, 0, 0),
   scale: new T.Vector3(1, 1, 1),
   material: new T.MeshStandardMaterial({ color: 0x6b5b4f }),
@@ -17,7 +18,7 @@ const defaultObjParams = {
 }
 
 export class Object extends T.Group {
-  constructor(defaultParams, config) {
+  constructor(config, defaultParams) {
     super();
     Object.assign(this, defaultParams, config)
     this.position.copy(this.position);
@@ -181,7 +182,7 @@ export class Wall extends Object {
 
 
 // ------------------------------------ Objects that use additional parameters --------------------
-const defaultBedParams = {
+export const defaultBedParams = {
   ...defaultObjParams,
   legHeight: 0.35,
   legRadius: 0.1,
@@ -260,7 +261,7 @@ export class Bed extends Object {
 }
 
 
-const defaultBookshelfParams = {
+export const defaultBookshelfParams = {
   ...defaultObjParams,
   wallThickness: 0.2,
   shelfThickness: 0.1,
@@ -356,7 +357,7 @@ export class Bookshelf extends Object {
 }
 
 
-const defaultCouchParams = {
+export const defaultCouchParams = {
   ...defaultObjParams,
   seatHeight: 0.5,
   backDepth: 0.35,
@@ -386,7 +387,7 @@ export class Couch extends Object {
 }
 
 
-const defaultDoorParams = {
+export const defaultDoorParams = {
   ...defaultObjParams,
   frameMaterial: new T.MeshStandardMaterial({ color: "blue" }),
   handleMaterial: new T.MeshStandardMaterial({ color: "silver" }),
@@ -458,7 +459,7 @@ export class Door extends Object {
 }
 
 
-const defaultOpenBoxParams = {
+export const defaultOpenBoxParams = {
   ...defaultObjParams,
   wallThickness: 0.1,
   openSide: "front" // Options: front, back, left, right, top, bottom
@@ -525,7 +526,7 @@ export class OpenBox extends Object {
 }
 
 
-const defaultTableParams = {
+export const defaultTableParams = {
   ...defaultObjParams,
   legHeight: 0.75,
   legRadius: 0.1,
@@ -578,7 +579,7 @@ export class Table extends Object {
 }
 
 
-const defaultWindowParams = {
+export const defaultWindowParams = {
   ...defaultObjParams,
   glassMaterial: new T.MeshStandardMaterial({ color: "silver" }),
 }

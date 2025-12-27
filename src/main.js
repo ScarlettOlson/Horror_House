@@ -147,7 +147,7 @@ class Game {
       this.drawerBuffer = buffer;
       // Apply to existing objects if they are already created
       this.interactables.forEach(obj => {
-        if (obj.initAudio && (obj instanceof inter_objs.InteractiveDrawer || obj instanceof inter_objs.InteractiveCabinet)) {
+        if (obj.initAudio && (obj instanceof inter_objs.InteractiveDrawerCabinet || obj instanceof inter_objs.InteractiveCabinet)) {
           obj.initAudio(this.listener, buffer);
         }
       });
@@ -338,7 +338,7 @@ class Game {
     // Initialize audio for interactables if buffer is ready
     if (this.drawerBuffer) {
       this.interactables.forEach(obj => {
-        if (obj.initAudio && (obj instanceof inter_objs.InteractiveDrawer || obj instanceof inter_objs.InteractiveCabinet)) {
+        if (obj.initAudio && (obj instanceof inter_objs.InteractiveDrawerCabinet || obj instanceof inter_objs.InteractiveCabinet)) {
           obj.initAudio(this.listener, this.drawerBuffer);
         }
       });
