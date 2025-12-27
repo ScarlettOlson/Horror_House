@@ -1,10 +1,11 @@
-import { texture } from 'three/tsl';
 import * as T from '../CS559-Three/build/three.module.js';
-import { loadTextureSafely } from './load_texture.js';
+import { loadTextureSafely } from '../load_texture.js';
 
 const twoPi = 2 * Math.PI;
 const halfPi = Math.PI / 2;
 
+
+// ------------------------------------ Default Object and Parameters -----------------------------
 export const defaultObjParams = {
   position: new T.Vector3(0, 0, 0),
   scale: new T.Vector3(1, 1, 1),
@@ -16,7 +17,6 @@ export const defaultObjParams = {
   textureSpacingX: 1,  // Texture repeats per unit in X
   textureSpacingY: 1,  // Texture repeats per unit in Y
 }
-
 export class Object extends T.Group {
   constructor(config, defaultParams) {
     super();

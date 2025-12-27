@@ -91,5 +91,43 @@ export function createShineShader() {
 
 
 
+export function createSkyShader() {
+  return (
+     new T.ShaderMaterial({
+      uniforms: {
+        topColor: { value: new T.Color(0x87CEEB) }, // Sky blue
+        bottomColor: { value: new T.Color(0xE0E0E0) }, // Light gray
+        offset: { value: 0.5 },
+        exponent: { value: 0.6 }
+      },
+      vertexShader: `
+        varying vec3 vWorldPosition;
+        void main() {
+          vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+          vWorldPosition = worldPosition.xyz;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform vec3 topColor;
+        uniform vec3 bottomColor;
+        uniform float offset;
+        uniform float exponent;
+        varying vec3 vWorldPosition;
+        void main() {
+          float h = normalize(vWorldPosition).y;
+          float f = pow(max(0.0, h + offset), exponent);
+          gl_FragColor = vec4(mix(bottomColor, topColor, f), 1.0);
+        }
+      `,
+      side: T.BackSide,
+      depthWrite: false
+    })
+  );
+}
+
+
+
+
 
 

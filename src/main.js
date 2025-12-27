@@ -1,14 +1,15 @@
 import * as T from '../CS559-Three/build/three.module.js';
-import { loadTextureSafely, createShineShader } from './load_texture.js';
-import { Input } from './input_manager.js';
-import * as inter_objs from './interactive.js';
-import { BasementDoor } from './interactive.js';
-import { createDirectionalLight, createPointLight } from './light.js';
-import * as objs from './objects.js';
 import { GLTFLoader } from '../CS559-Three/examples/jsm/loaders/GLTFLoader.js';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
+
+import * as texture from './load_texture.js';
+import * as input from './input_manager.js';
+import * as inter_objs from './interactive.js';
+import * as light from './light.js';
+import * as creator from './structure_creator.js';
+
 
 // Vignette Shader
 const VignetteShader = {
@@ -126,33 +127,6 @@ class Game {
     this.renderer.shadowMap.type = T.PCFSoftShadowMap;
     document.body.appendChild(this.renderer.domElement);
 
-    // Audio Initialization
-    this.listener = new T.AudioListener();
-
-    const audioLoader = new T.AudioLoader();
-
-    // Ambient Music
-    const ambientSound = new T.Audio(this.listener);
-    audioLoader.load('assets/ambient music.mp3', (buffer) => {
-      ambientSound.setBuffer(buffer);
-      ambientSound.setLoop(true);
-      ambientSound.setVolume(0.5);
-      ambientSound.play();
-    });
-    this.ambientSound = ambientSound;
-
-    // Interaction Sounds
-    this.drawerBuffer = null;
-    audioLoader.load('assets/drawer.mp3', (buffer) => {
-      this.drawerBuffer = buffer;
-      // Apply to existing objects if they are already created
-      this.interactables.forEach(obj => {
-        if (obj.initAudio && (obj instanceof inter_objs.InteractiveDrawerCabinet || obj instanceof inter_objs.InteractiveCabinet)) {
-          obj.initAudio(this.listener, buffer);
-        }
-      });
-    });
-
     // Create The Scene
     this.scene = new T.Scene();
     this.scene.background = new T.Color(0x87CEEB);
@@ -248,19 +222,6 @@ class Game {
     this.composer.addPass(this.vignettePass);
 
 
-
-    // Ensure AudioContext is resumed on user interaction
-    const resumeAudio = () => {
-      if (this.listener.context.state === 'suspended') {
-        this.listener.context.resume();
-      }
-      window.removeEventListener('click', resumeAudio);
-      window.removeEventListener('keydown', resumeAudio);
-    };
-    window.addEventListener('click', resumeAudio);
-    window.addEventListener('keydown', resumeAudio);
-
-
     this.loop();
   }
 
@@ -287,62 +248,16 @@ class Game {
     dom.codeDisplay.textContent = '_ _ _ _ _ _';
     dom.objective.textContent = 'Find 3 notes with password pieces to unlock the basement.';
 
-    // Materials for house
-    const floorMat = await loadTextureSafely('./src/textures/floor.jpg', 0x6b5b4f, this.prototypeMode);
-    const ceilingMat = await loadTextureSafely('./src/textures/ceiling.jpg', 0x5a5a5a, this.prototypeMode);
-    const wallMat = await loadTextureSafely('./src/textures/wall.jpg', 0x8b7d6b, this.prototypeMode);
-    const frameMat = await loadTextureSafely('./src/textures/frame.jpg', 0xFF00FF, this.prototypeMode);
-    const doorMat = await loadTextureSafely('./src/textures/door.jpg', 0x4a3a2a, this.prototypeMode);
-    const handleMat = await loadTextureSafely('./src/textures/handle.jpg', 0xaaaaaa, this.prototypeMode)
-    const glassMat = new T.MeshStandardMaterial({
-      color: 0x99bbee,
-      transparent: true,
-      opacity: 0.3,
-      roughness: 0.1,
-      metalness: 0.1
-    });
-    const couchMat = await loadTextureSafely('./src/textures/couch.jpg', 0x5a4a3a, this.prototypeMode);
-    const bookshelfMat = await loadTextureSafely('./src/textures/bookshelf.jpg', 0xFF00FF, this.prototypeMode);
-    const drawerMat = await loadTextureSafely('./src/textures/drawer.jpg', 0x991155, this.prototypeMode)
-    const noteMat = await loadTextureSafely('./src/textures/note.jpg', 0xddddcc, this.prototypeMode);
-    const tableMat = await loadTextureSafely('./src/textures/table.jpg', 0x111111, this.prototypeMode)
-    const groundMat = await loadTextureSafely('./src/textures/ground.jpg', 0x97ff9e, this.prototypeMode);
-
-
-    // House dimensions
-    const houseWidth = 20;
-    const houseDepth = 20;
-    const houseHeight = 3;
-    const wallThickness = 0.2;
-
     // Create house group
     const house = new T.Group();
     this.scene.add(house);
 
 
     // Build the basic pieces of a house
-    const house_pieces = objs.createHouse(
-      houseWidth, houseHeight, houseDepth, wallThickness,
-      floorMat, ceilingMat, wallMat, frameMat, doorMat, handleMat, glassMat,
-      couchMat, bookshelfMat, drawerMat, noteMat, tableMat,
-      this.prototypeMode
-    );
-    house.add(house_pieces.house);
-    house_pieces.groundObjs.forEach(obj => { this.groundObjects.push(obj) });
-    house_pieces.obstacles.forEach(obj => { this.obstacles.push(obj) });
-    house_pieces.interactables.forEach(obj => {
-      this.interactables.push(obj);
-      this.updateables.push(obj);
-    });
+    const house_pieces = creator.createHouse();
+    house.add(house_pieces);
+    this.obstacless.push(house_pieces)
 
-    // Initialize audio for interactables if buffer is ready
-    if (this.drawerBuffer) {
-      this.interactables.forEach(obj => {
-        if (obj.initAudio && (obj instanceof inter_objs.InteractiveDrawerCabinet || obj instanceof inter_objs.InteractiveCabinet)) {
-          obj.initAudio(this.listener, this.drawerBuffer);
-        }
-      });
-    }
 
 
     // Create a Ground plane
@@ -357,36 +272,7 @@ class Game {
     // Add skybox with gradient effect
     const skyGeometry = new T.SphereGeometry(200, 32, 32);
     // Create gradient skybox shader
-    const skyMaterial = new T.ShaderMaterial({
-      uniforms: {
-        topColor: { value: new T.Color(0x87CEEB) }, // Sky blue
-        bottomColor: { value: new T.Color(0xE0E0E0) }, // Light gray
-        offset: { value: 0.5 },
-        exponent: { value: 0.6 }
-      },
-      vertexShader: `
-        varying vec3 vWorldPosition;
-        void main() {
-          vec4 worldPosition = modelMatrix * vec4(position, 1.0);
-          vWorldPosition = worldPosition.xyz;
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-        }
-      `,
-      fragmentShader: `
-        uniform vec3 topColor;
-        uniform vec3 bottomColor;
-        uniform float offset;
-        uniform float exponent;
-        varying vec3 vWorldPosition;
-        void main() {
-          float h = normalize(vWorldPosition).y;
-          float f = pow(max(0.0, h + offset), exponent);
-          gl_FragColor = vec4(mix(bottomColor, topColor, f), 1.0);
-        }
-      `,
-      side: T.BackSide,
-      depthWrite: false
-    });
+    const skyMaterial =  texture.createSkyShader();
     const skybox = new T.Mesh(skyGeometry, skyMaterial);
     skybox.renderOrder = -1000; // Render first
     this.scene.add(skybox);

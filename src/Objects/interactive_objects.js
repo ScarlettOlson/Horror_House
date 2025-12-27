@@ -1,4 +1,4 @@
-import * as T from '../CS559-Three/build/three.module.js';
+import * as T from '../../CS559-Three/build/three.module.js';
 import * as objs from './objects.js';
 import * as simpleObjs from './simple_objects.js';
 
@@ -13,7 +13,7 @@ const defaultInteractiveParams = {
 /**
  * Interactable base
  */
-export class Interactable extends Object {
+export class Interactable extends simpleObjs.Object {
   constructor(config, defaultParams) {
     super(config, defaultParams);
   }
