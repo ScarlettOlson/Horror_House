@@ -2,24 +2,14 @@ import * as T from '../CS559-Three/build/three.module.js';
 
 
 
-const protoMat = (color) => {
-  return new T.MeshStandardMaterial({ 
-    color, 
-    roughness: 0.8, 
-    metalness: 0.0
-  });
-};
 
 /**
  * Utility: tries to load a texture, falls back to a procedural if missing
  */
-export function loadTextureSafely(url, fallbackColor = 0x777777, isPrototype = false) {
+export function loadTextureSafely(url, defaultMaterial) {
   const loader = new T.TextureLoader();
 
   return new Promise((resolve) => {
-    if(isPrototype) {
-      return resolve(protoMat(fallbackColor));
-    }
     loader.load(
       url,
       tex => {
@@ -33,7 +23,7 @@ export function loadTextureSafely(url, fallbackColor = 0x777777, isPrototype = f
       undefined,
       () => {
         // Fallback: return protoMat with the given color
-        resolve(protoMat(fallbackColor));
+        resolve(protoMat(defaultMaterial));
       }
     );
   });
