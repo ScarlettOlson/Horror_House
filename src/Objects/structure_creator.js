@@ -8,7 +8,7 @@ import { isValidHoles, validateNumber } from '../validation.js';
 
 
 
-export function house() {
+export function createHouse() {
     const objects = [];         // Shown in 3D space
     const obstacles = [];       // Can't be walked through
     const interactables = [];   // Can be interactved with. Interactable Type
@@ -39,9 +39,12 @@ export function house() {
             { height: doorHeight, width: doorWidth, offsetX: -2},
             { height: doorHeight, width: doorWidth, offsetX: 2 },
         ],
-    })
+    });
+    objects.push();
+    obstacles.push();
+    interactables.push();
 
-    
+    return {objects, obstacles, interactables}
 }
 
 
@@ -68,8 +71,8 @@ export function wallConstructor({
     windows.forEach((window, i) => {
         validateNumber(window.width, `windows[${i}].width`);
         validateNumber(window.height, `windows[${i}].height`);
-        validateNumber(window.offsetX, `windows[${i}].offsetX`);
-        validateNumber(window.offsetY, `windos[${i}].offsetY`);
+        validateNumber(window.offsetX, `windows[${i}].offsetX`, -wallWidth/2);
+        validateNumber(window.offsetY, `windos[${i}].offsetY`, -wallHeight/2);
 
         allOpenings.push({
             type: 'window',
@@ -84,7 +87,7 @@ export function wallConstructor({
     passages.forEach((passage, i) => {
         validateNumber(passage.width, `passages[${i}].width`);
         validateNumber(passage.height, `passages[${i}].height`);
-        validateNumber(passage.offsetX, `passages[${i}].offsetX`);
+        validateNumber(passage.offsetX, `passages[${i}].offsetX`, -wallWidth/2);
         
         allOpenings.push({
             type: 'passage',
@@ -99,7 +102,7 @@ export function wallConstructor({
     doors.forEach((door, i) => {
         validateNumber(door.width, `doors[${i}].width`);
         validateNumber(door.height, `doors[${i}].height`);
-        validateNumber(door.offsetX, `doors[${i}].offsetX`);
+        validateNumber(door.offsetX, `doors[${i}].offsetX`, -wallWidth/2);
 
         allOpenings.push({
             type: 'door',

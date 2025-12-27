@@ -1,5 +1,6 @@
-import * as T from '../CS559-Three/build/three.module.js';
+import * as T from '../../CS559-Three/build/three.module.js';
 import { loadTextureSafely } from '../load_texture.js';
+import * as validate from '../validation.js';
 
 const twoPi = 2 * Math.PI;
 const halfPi = Math.PI / 2;
@@ -21,7 +22,20 @@ export class Object extends T.Group {
   constructor(config, defaultParams) {
     super();
     Object.assign(this, defaultParams, config)
-    this.position.copy(this.position);
+
+    // Check that parameters are valid
+    const minVector = new T.Vector3(-Infinity, -Infinity, -Infinity)
+    validate.validateVector3(this.position, "PositionVector", minVector);
+    validate.validateVector3(this.scale, "ScaleVector");
+    validate.validateMaterial(this.material, "material");
+    validate.validateNumber(this.rotationY, "rotationY");
+    validate.validateBool(this.castShadow, "castShadow");
+    validate.validateBool(this.receiveShadow, "receiveShadow");
+    validate.validateBool(this.useTextures, "useTextures");
+    validate.validateNumber(this.textureSpacingX, "textureSpacingX");
+    validate.validateNumber(this.textureSpacingY, "textureSpacingY");
+
+    // Set Three.Group parameters
     this.rotation.y = this.rotationY;
     this.mesh.castShadow = this.castShadow;
     this.mesh.receiveShadow = this.receiveShadow;
@@ -108,12 +122,15 @@ export class Handle extends Object {
     handlePath.add( new T.LineCurve3(handlePnts[6], handlePnts[7]) );
     
     // Create tube geometry
-    const tubeGeometry = new T.TubeGeometry(handlePath, 64, radius, 16, false);
-    const tubeMesh = new T.Mesh(tubeGeometry);
-    this.add(tubeMesh);
+    const handleGeometry = new T.TubeGeometry(handlePath, 64, radius, 16, false);
+    const handle = new T.Mesh(handleGeometry);
+    handle.castShadow = this.castShadow;
+    handle.receiveShadow = this.receiveShadow;
+
+    this.add(handle);
 
     // Load material asynchronously if needed
-    this.loadTexture(tubeMesh, './src/textures/handle.jpg', this.material, twoPi*radius, length + 2*height);
+    this.loadTexture(handle, './src/textures/handle.jpg', this.material, twoPi*radius, length + 2*height);
   }
 }
 
@@ -176,7 +193,7 @@ export class Wall extends Object {
 
 
     // Load material asynchronously if needed
-    this.loadTexture(this.mesh, './src/textures/wall.jpg',  this.material, width, height);
+    this.loadTexture(this.mesh, './src/textures/wall.jpg', this.material, width, height);
   }
 }
 
@@ -193,6 +210,9 @@ export const defaultBedParams = {
   mattressMaterial: new T.MeshStandardMaterial({ color:"white" }),
   headboardThickness: 0.1,
 }
+/**s
+ * A Three representation of a bed with a headboard
+ */
 export class Bed extends Object {
   constructor(config) {
     // Create Group, set it's position, and set it's orientation
@@ -202,6 +222,16 @@ export class Bed extends Object {
     const width = this.scale.x;
     const height = this.scale.y;
     const depth = this.scale.z;
+
+    // Validate all Parameters
+    validate.validateNumber(this.legHeight, "legHeight", max=height);
+    validate.validateNumber(this.legRadius, "legRadius", max=Math.min(width/4, depth/4));
+    validate.validateNumber(this.legWidth, "legWidth", max=width);
+    validate.validateNumber(this.legDepth, "legDepth", max=depth);
+    validate.validateMaterial(this.legMaterial, "legMaterial");
+    validate.validateNumber(this.mattressHeight, "mattressHeight", height);
+    validate.validateMaterial(this.mattressMaterial, "mattressMaterial");
+    validate.validateNumber(this.headboardThickness, "headboardThickness", depth/4);
 
     // Creat the legs of the bed
     const legDimenions = {
@@ -268,13 +298,12 @@ export const defaultBookshelfParams = {
   numShelves: 4,
   shelfMaterial: new T.MeshStandardMaterial({ color: "Orange" }),
 }
+/**
+ * A Three representation of a bookshelf with multiple shelves
+ */
 export class Bookshelf extends Object {
   constructor(config) {
-    // Create Group, set it's position, and set it's orientation
-    super();
-    Object.assign(this, defaultBookshelfParams, config);
-    this.position.copy(this.position);
-    this.rotation.y = this.rotationY;
+    super(config, defaultBookshelfParams);
 
     // Get shape Params
     const width = this.scale.x;
@@ -282,23 +311,17 @@ export class Bookshelf extends Object {
     const depth = this.scale.z;
 
     // Parameter Saftey Checks
-    if(width/2 <= 2 * wallThickness) {
-      throw new EvalError("The shelf walls are too thick for the width");
-    }
-    const totalObjHeight = 2 * this.wallThickness +this.numShelves * this.shelfThickness;
-    if(height/2 <= totalObjHeight) {
-      throw new EvalError("The shelf walls and shelves are too thick for the height");
-    }
-    if(depth/2 <= this.wallThickness) {
-      throw new EvalError("The shelf walls are too thick for the depth");
-    }
+    validate.validateNumber(wallThickness, "wallThickness", max=this.scale.min / 2);
+    validate.validateNumber(shelfThickness, "shelfThickness", max=height/numShelves );
 
     // Create the back wall
     const backGeometry = new T.BoxGeometry(width, height, this.wallThickness);
     const backWall = new T.Mesh(backGeometry);
     backWall.position.set(0, 0, (this.wallThickness - depth) / 2);
+    backWall.castShadow = this.castShadow;
+    backWall.receiveShadow = this.receiveShadow;
     this.add(backWall);
-    this.loadTexture(backWall, './src/textures/shelf.jpg', this.material, width, height)
+    this.loadTexture(backWall, './src/textures/shelf.jpg', this.material, width, height);
 
     // Create the Side Walls
     const verticalDimensions = {
@@ -310,13 +333,20 @@ export class Bookshelf extends Object {
       depthSegments: 1,
     }
     const verticalGeometry = new T.BoxGeometry(...verticalDimensions);
+
     const leftWall = new T.Mesh(verticalGeometry);
-    const rightWall = new T.Mesh(verticalGeometry);
     leftWall.position.set((this.wallThickness - width) / 2, 0, 0);
-    rightWall.position.set((width - this.wallThickness) / 2, 0, 0);
-    this.add(leftWall, rightWall);
+    leftWall.castShadow = this.castShadow;
+    leftWall.receiveShadow = this.receiveShadow;
     this.loadTexture(leftWall, './src/textures/shelf.jpg', this.material, verticalDimensions.depth, verticalDimensions.height);
+
+    const rightWall = new T.Mesh(verticalGeometry);
+    rightWall.position.set((width - this.wallThickness) / 2, 0, 0);
+    rightWall.castShadow = this.castShadow;
+    rightWall.receiveShadow = this.receiveShadow;
     this.loadTexture(rightWall, './src/textures/shelf.jpg', this.material, verticalDimensions.depth, verticalDimensions.height);
+
+    this.add(leftWall, rightWall);
 
     // Create the top and bottom walls
     const horizontalDimensions = {
@@ -328,13 +358,20 @@ export class Bookshelf extends Object {
       depthSegments: 1,
     };
     const horizontalGeometry = new T.BoxGeometry(...horizontalDimensions);
-    const topWall = new T.Mesh(horizontalGeometry);
+
     const bottomWall = new T.Mesh(horizontalGeometry);
-    topWall.position.set(0, (height - this.wallThickness) / 2, 0);
     bottomWall.position.set(0, (this.wallThickness - height) / 2, 0);
-    this.add(topWall, bottomWall);
-    this.loadTexture(topWall, './src/textures/shelf.jpg', this.material, horizontalDimensions.width, horizontalDimensions.height);
+    bottomWall.castShadow = this.castShadow;
+    bottomWall.receiveShadow = this.receiveShadow;
     this.loadTexture(bottomWall, './src/textures/shelf.jpg', this.material, horizontalDimensions.width, horizontalDimensions.height);
+
+    const topWall = new T.Mesh(horizontalGeometry);
+    topWall.position.set(0, (height - this.wallThickness) / 2, 0);
+    topWall.castShadow = this.castShadow;
+    topWall.receiveShadow = this.receiveShadow;
+    this.loadTexture(topWall, './src/textures/shelf.jpg', this.material, horizontalDimensions.width, horizontalDimensions.height);
+
+    this.add(topWall, bottomWall);
 
     // Create Shelves
     const shelfDimensions = {
@@ -350,6 +387,8 @@ export class Bookshelf extends Object {
     for (let i=1; i<=this.numShelves; i++) {
       const shelf = new T.Mesh(shelfGeometry);
       shelf.position.set(0, i * shelfSpacing, 0);
+      shelf.castShadow = this.castShadow;
+      shelf.receiveShadow = this.receiveShadow;
       this.add(shelf);
       this.loadTexture(shelf, './src/textures/shelf.jpg', this.shelfMaterial, shelfDimensions.width, shelfDimensions.depth);
     }
@@ -362,15 +401,21 @@ export const defaultCouchParams = {
   seatHeight: 0.5,
   backDepth: 0.35,
 }
+/**
+ * A Three representation of a Couch with no arm rests
+ */
 export class Couch extends Object {
   constructor(config) {
-    // Create Group, set it's position, and set it's orientation
     super(config, defaultCouchParams);
-    
-    // Get shape Params
+
+    // Get Shape Params
     const width = this.scale.x;
     const height = this.scale.y;
     const depth = this.scale.z;
+
+    // Validate Parameters
+    validate.validateNumber(this.seatHeight, "seatHeight", max=height/2);
+    validate.validateNumber(this.backDepth, "backDepth", )
 
     const seatGeometry = new T.BoxGeometry(width, this.seatHeight, depth);
     const seat = new T.Mesh(seatGeometry);
@@ -383,6 +428,9 @@ export class Couch extends Object {
     back.position.set(0, this.seatHeight / 2 , 0);
     this.add(back);
     this.loadTexture(back, './src/textures/couch.jpg', this.material, width, height-this.seatHeight)
+
+    this.seat = seat;
+    this.back = back;
   }
 }
 
@@ -391,70 +439,96 @@ export const defaultDoorParams = {
   ...defaultObjParams,
   frameMaterial: new T.MeshStandardMaterial({ color: "blue" }),
   handleMaterial: new T.MeshStandardMaterial({ color: "silver" }),
+  openClockwise: false,
 }
 /**
- * 
+ * A Three representation of a Door with a frame
  */
 export class Door extends Object {
   constructor(config) {
-    // Create Group, set it's position, and set it's orientation
     super(config, defaultDoorParams);
 
-    // Get shape Params
+    // Validate parameters
+    validate.validateMaterial(this.frameMaterial, "frameMaterial");
+    validate.validateMaterial(this.handleMaterial, "handleMaterial");
+    validate.validateBool(this.openClockwise, "openClockwise");
+
+    // Get Shape Params
     const width = this.scale.x;
     const height = this.scale.y;
     const thickness = this.scale.z;
 
-    // Frame top
+    // Create Frame Group
+    const frame = new T.Group();
+
+    // Create the top of the frame
     const topGeometry = new T.BoxGeometry(width, thickness, thickness);
-    this.frameTop = new T.Mesh(topGeometry);
-    this.frameTop.position.set(0, (height - thickness) / 2, 0);
-    this.frameTop.castShadow = this.castShadow;
-    this.frameTop.receiveShadow = this.receiveShadow;
-    this.add(this.frameTop);
+    const frameTop = new T.Mesh(topGeometry);
+    frameTop.position.set(0, (height - thickness) / 2, 0);
+    frameTop.castShadow = this.castShadow;
+    frameTop.receiveShadow = this.receiveShadow;
+    frame.add(frameTop);
     this.loadTexture(frameTop, './src/textures/frame.jpg', this.frameMaterial);
 
-    // Frame left
+    // Create the left side of the frame
     const leftGeometry = new T.BoxGeometry(thickness, height, thickness);
-    this.frameLeft = new T.Mesh(leftGeometry);
-    this.frameLeft.position.set((-width + thickness) / 2, 0, 0);
-    this.frameLeft.castShadow = this.castShadow;
-    this.frameLeft.receiveShadow = this.receiveShadow;
-    this.add(this.frameLeft);
+    const frameLeft = new T.Mesh(leftGeometry);
+    frameLeft.position.set((-width + thickness) / 2, 0, 0);
+    frameLeft.castShadow = this.castShadow;
+    frameLeft.receiveShadow = this.receiveShadow;
+    frame.add(frameLeft);
     this.loadTexture(frameLeft, './src/textures/frame.jpg', this.frameMaterial);
 
-    // Frame right
+    // Create the right side of the frame
     const rightGeometry = new T.BoxGeometry(thickness, height, thickness);
-    this.frameRight = new T.Mesh(rightGeometry);
-    this.frameRight.position.set((width - thickness) / 2, 0, 0);
-    this.frameRight.castShadow = this.castShadow;
-    this.frameRight.receiveShadow = this.receiveShadow;
-    this.add(this.frameRight);
+    const frameRight = new T.Mesh(rightGeometry);
+    frameRight.position.set((width - thickness) / 2, 0, 0);
+    frameRight.castShadow = this.castShadow;
+    frameRight.receiveShadow = this.receiveShadow;
+    frame.add(frameRight);
     this.loadTexture(frameRight, './src/textures/frame.jpg', this.frameMaterial);
 
-    // Door with hinge
-    this.hinge = new T.Object3D();
+    // Create a hing to rotate around
+    const hinge = new T.Object3D();
+    const hingOffsetX = (width/2) - thickness
+    const hingOffsetZ = (thickness/2);
+    if(openClockwise) hinge.position.set(hingOffsetX, 0, hingOffsetZ);
+    else hinge.position.set(-hingOffsetX, 0, hingOffsetZ);
+    this.add(hinge);
+
+    // Create a door on the hing
     const doorGeometry = new T.BoxGeometry(width - 2 * thickness, height - thickness, thickness);
-    this.door = new T.Mesh(doorGeometry);
-    this.hinge.position.set(-(width - thickness) / 2, 0, 0);
-    this.door.position.set((width - thickness) / 2, -thickness / 2, 0);
-    this.hinge.add(this.door);
-    this.add(this.hinge);
-    this.loadTexture(this.door, './src/textures/door.jpg', this.material);
+    const door = new T.Mesh(doorGeometry);
+    door.position.set((width - thickness) / 2, -thickness / 2, 0);
+    hinge.add(door);
+    this.loadTexture(door, './src/textures/door.jpg', this.material);
 
-    // Handles
-    const handleGeometry = new T.CylinderGeometry(0.03, 0.03, 0.15, 16);
-    const frontHandle = new T.Mesh(handleGeometry);
-    frontHandle.rotation.x = Math.PI / 2;
-    frontHandle.position.set(3 * width / 4, 0, thickness / 2);
-    this.hinge.add(frontHandle);
-    this.loadTexture(frontHandle, './src/textures/handle.jpg', this.handleMaterial);
+    // Create handles on the door
+    const handleLength = height/16;
+    const handleHeight = thickness/2;
+    const handleRadius = handleHeight/4;
+    const frontHandleParams = {
+      ...this,
+      position: new T.Vector3(3 * width / 8, 0, (thickness+handleHeight)/2),
+      scale: new T.Vector3(handleLength, handleHeight, handleRadius),
+      material: this.handleMaterial,
+    }
+    const frontHandle = new Handle(frontHandleParams);
+    door.add(frontHandle);
+    const backHandleParams = {
+      ...frontHandleParams,
+      position: new T.Vector3(3 * width / 8, 0, -(thickness+handleHeight)/2),
+      rotationY: Math.PI,
+    }
+    const backHandle = new Handle(backHandleParams);
+    door.add(backHandle);
 
-    const backHandle = new T.Mesh(new T.CylinderGeometry(handleGeometry));
-    backHandle.rotation.x = -Math.PI / 2;
-    backHandle.position.set(3 * width / 4, 0, -thickness / 2);
-    this.hinge.add(backHandle);
-    this.loadTexture(backHandle, './src/textures/handle.jpg', this.handleMaterial);
+    // Finall Property Assignment
+    this.frame= frame
+    this.hinge = hinge;
+    this.door = door;
+    this.frontHandle = frontHandle;
+    this.backHandle = backHandle;
   }
 }
 
@@ -465,7 +539,7 @@ export const defaultOpenBoxParams = {
   openSide: "front" // Options: front, back, left, right, top, bottom
 }
 /**
- * Creates a box with one of the sides is open
+ * A Three representation of a box with an only 5 sides
  */
 export class OpenBox extends Object {
   constructor(config) {
@@ -477,6 +551,9 @@ export class OpenBox extends Object {
     const height = this.scale.y;
     const depth = this.scale.z;
     const thick = this.wallThickness;
+
+    // Validate Parameter
+    validate.validateNumber(thick, "wallThickness", this.scale.min/2);
 
     // Create the bottom and top sides
     const verticalGeometry = new T.BoxGeometry(width, thick, depth);
@@ -535,9 +612,11 @@ export const defaultTableParams = {
   legMaterial: new T.MeshStandardMaterial({ color: "brown" }),
   topThickness: 0.1,
 }
+/**
+ * A Three representation of a four legged table
+ */
 export class Table extends Object {
   constructor(config) {
-    // Create Group, set it's position, and set it's orientation
     super(config, defaultTableParams);
 
     // Get shape Params
@@ -545,8 +624,17 @@ export class Table extends Object {
     const height = this.scale.y;
     const depth = this.scale.z;
 
+    // Validate all Parameters
+    validate.validateNumber(this.legHeight, "legHeight", max=height);
+    validate.validateNumber(this.legRadius, "legRadius", max=Math.min(width/4, depth/4));
+    validate.validateNumber(this.legWidth, "legWidth", max=width);
+    validate.validateNumber(this.legDepth, "legDepth", max=depth);
+    validate.validateMaterial(this.legMaterial, "legMaterial");
+    validate.validateMaterial(this.topThickness, "topThickness", height)
+    
+
     // Create the top of the table
-    const top = new T.Mesh(new T.BoxGeometry(width, this.topThickness, depth), this.Material);
+    const top = new T.Mesh(new T.BoxGeometry(width, this.topThickness, depth), this.material);
     top.position.set(0, height, 0);
     this.add(top);
     this.loadTexture(top, './src/textures/tableTop.jpg', this.material);
@@ -570,7 +658,7 @@ export class Table extends Object {
     ];
 
     for (const [lx, ly, lz] of legPositions) {
-      const leg = new T.Mesh(legGeo);
+      const leg = new T.Mesh(legGeometry);
       leg.position.set(lx, ly, lz);
       this.add(leg);
       this.loadTexture(leg, './src/textures/leg.jpg', this.legMaterial);
@@ -584,12 +672,13 @@ export const defaultWindowParams = {
   glassMaterial: new T.MeshStandardMaterial({ color: "silver" }),
 }
 /**
- * 
+ * A Three representation of a 3D window
  */
 export class Window extends Object {
   constructor(config) {
     // Create Group, set it's position, and set it's orientation
     super(config, defaultWindowParams);
+    validate.validateMaterial(glassMaterial, "glassMaterial");
 
     // Get shape Params
     const width = this.scale.x;

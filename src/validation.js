@@ -1,20 +1,69 @@
+import * as T from '../../CS559-Three/build/three.module.js';
+import { Vector3 } from '../CS559-Three/build/three.core';
 
 
 
 
-
-
-
-
-
-export function validateNumber(value, name, min = 0) {
+/**
+ * Validate that a value is a number and is between a given range.
+ * Default range is 0 < value <= infinite
+ * @param {Number} value 
+ * @param {String} name 
+ * @param {Number} min 
+ * @param {Number} max 
+ */
+export function validateNumber(value, name = "", min = 0, max = Infinity) {
     if (typeof value !== 'number' || isNaN(value)) {
-        throw new Error(`${name} must be a valid number`);
+        throw new TypeError(`${name} must be a valid number`);
     }
     if (value <= min) {
-        throw new Error(`${name} must be greater than ${min}`);
+        throw new EvalError(`${name} must be greater than ${min}`);
+    }
+    if (value > max) {
+        throw new EvalError(`${name} must be less than or equal to ${max}`);
     }
 }
+
+/**
+ * Validate that a that a vector is within a given range
+ * Default range is 0 < value <= infinite for x, y, and z
+ * @param {T.Vector3} value 
+ * @param {String} name 
+ * @param {T.Vector3} min 
+ * @param {T.Vector3} max 
+ */
+export function validateVector3(value, name = "", min = new T.Vector3(), max = new T.Vector3(Infinity, Infinity, Infinity)) {
+    if(!value || !value.isVector3) {
+        throw new TypeError(`${name} must be a valid Three.Vector3`);
+    }
+    validateNumber(value.x, name+'.x', min.x, max.x);
+    validateNumber(value.y, name+'.y', min.y, max.y);
+    validateNumber(value.z, name+'.z', min.z, max.z);
+}
+
+/**
+ * Validates that a value is a boolean
+ * @param {boolean} value 
+ * @param {String} name 
+ */
+export function validateBool(value, name = "") {
+    if(typeof value !== "boolean") {
+        throw new TypeError(`${name} must be of type boolean`);
+    }
+}
+
+/**
+ * Validates that a value is a Three.Material
+ * @param {Material} value 
+ * @param {String} name 
+ */
+export function validateMaterial(value, name = "") {
+    if(!value || !value.isMaterial) {
+        throw new TypeError(`${name} must be a valid Three.Material`);
+    }
+}
+
+
 
 // Helper function to check if two rectangles overlap
 export function rectanglesOverlap(rect1, rect2) {

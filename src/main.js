@@ -6,9 +6,11 @@ import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 
 import * as texture from './load_texture.js';
 import * as input from './input_manager.js';
-import * as inter_objs from './interactive.js';
+import * as objs from './Objects/objects.js';
+import * as interObjs from './Objects/interactive_objects.js';
+import * as simpleObjs from './Objects/simple_objects.js';
 import * as light from './light.js';
-import * as creator from './structure_creator.js';
+import * as creator from './Objects/structure_creator.js';
 
 
 // Vignette Shader
@@ -114,7 +116,7 @@ class Game {
   constructor() {
     this.clock = new T.Clock();
     this.raycaster = new T.Raycaster();
-    this.input = new Input(dom);
+    this.input = new input.Input(dom);
     this.collected = new Map(); // index -> value
     this.prototypeMode = !dom.fullModeCheckbox.checked;
     this.gameStarted = false;
@@ -136,15 +138,15 @@ class Game {
     this.scene.add(ambient);
 
     // Create sunlight
-    const dirLight = createDirectionalLight(10, 15, 5, 0xffffff, 1.2)
+    const dirLight = light.createDirectionalLight(10, 15, 5, 0xffffff, 1.2)
     this.scene.add(dirLight);
     this.dirLight = dirLight;
     this.ambientLight = ambient;
 
     // Create ceiling lights as point lights
-    this.ceilingLight1 = createPointLight(0, 2.5, 0, 0xffffff, 1.0, 25);
-    this.ceilingLight2 = createPointLight(-6, 2.5, -6, 0xffffff, 0.8, 22);
-    this.ceilingLight3 = createPointLight(6, 2.5, -6, 0xffffff, 0.8, 22);
+    this.ceilingLight1 = light.createPointLight(0, 2.5, 0, 0xffffff, 1.0, 25);
+    this.ceilingLight2 = light.createPointLight(-6, 2.5, -6, 0xffffff, 0.8, 22);
+    this.ceilingLight3 = light.createPointLight(6, 2.5, -6, 0xffffff, 0.8, 22);
     this.scene.add(this.ceilingLight1);
     this.scene.add(this.ceilingLight2);
     this.scene.add(this.ceilingLight3);
@@ -186,9 +188,6 @@ class Game {
     dom.startBtn.addEventListener('click', () => {
       dom.storyPopup.style.display = 'none';
       this.gameStarted = true;
-      if (this.listener.context.state === 'suspended') {
-        this.listener.context.resume();
-      }
     });
 
 
@@ -201,7 +200,6 @@ class Game {
 
     this.camera = new T.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100);
     this.camera.position.set(0, CONFIG.player.height + 2, 0);
-    this.camera.add(this.listener);
     window.addEventListener('resize', () => {
       this.camera.aspect = window.innerWidth / window.innerHeight;
       this.camera.updateProjectionMatrix();
@@ -255,18 +253,19 @@ class Game {
 
     // Build the basic pieces of a house
     const house_pieces = creator.createHouse();
-    house.add(house_pieces);
-    this.obstacless.push(house_pieces)
+    house_pieces.objects.forEach(object => { this.scene.add(object); });
+    house_pieces.obstacles.forEach(obstacle => { this.obstacles.push(obstacle); });
+
 
 
 
     // Create a Ground plane
-    const ground = new T.Mesh(new T.PlaneGeometry(3 * houseWidth, 3 * houseDepth), groundMat);
-    ground.rotation.x = -Math.PI / 2;
-    ground.position.set(0, 0, 0);
-    ground.receiveShadow = true;
-    this.scene.add(ground);
-    this.groundObjects.push(ground);
+    // const ground = new T.Mesh(new T.PlaneGeometry(100, 100), groundMat);
+    // ground.rotation.x = -Math.PI / 2;
+    // ground.position.set(0, 0, 0);
+    // ground.receiveShadow = true;
+    // this.scene.add(ground);
+    // this.groundObjects.push(ground);
 
 
     // Add skybox with gradient effect
@@ -351,7 +350,7 @@ class Game {
     // Find all windows in the house to pass to the Eye
     const windows = [];
     house.traverse(child => {
-      if (child instanceof objs.Window) {
+      if (child instanceof simpleObjs.Window) {
         windows.push(child);
       }
     });
@@ -614,12 +613,12 @@ class Game {
     const interact = this.input.consumeInteract();
     if (closestDist <= CONFIG.interact.distance) {
       if (interact) {
-        if (closest instanceof inter_objs.InteractiveNote) {
+        if (closest instanceof interObjs.InteractiveNote) {
           this.noteInteraction(closest);
         } else {
           closest.onInteract();
           // Check for end game condition
-          if (closest instanceof inter_objs.BasementDoor && !closest.isLocked) {
+          if (closest instanceof interObjs.BasementDoor && !closest.isLocked) {
             this.showOverlay("THE END");
           }
         }

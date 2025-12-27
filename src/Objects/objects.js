@@ -1,6 +1,6 @@
 import * as T from '../../CS559-Three/build/three.module.js';
 import * as interactiveObjs from './interactive_objects.js';
-import * as simpleObjs from '../simple_objects.js';
+import * as simpleObjs from './simple_objects.js';
 
 const twoPi = 2 * Math.PI;
 const halfPi = Math.PI / 2;
